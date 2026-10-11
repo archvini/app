@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field, field_validator
 
-ShopKind = Literal["borracharia", "oficina", "autoreparo"]
+ShopKind = Literal["borracharia", "oficina", "autoreparo", "bicicletar"]
 ShopStatus = Literal["pendente", "ativo", "recusado"]
 
 PHONE_RE = re.compile(r"^[0-9+()\-\s]{8,20}$")

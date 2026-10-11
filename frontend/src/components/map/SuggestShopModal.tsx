@@ -53,7 +53,7 @@ export default function SuggestShopModal({ open, onOpenChange, coords }: Props) 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="border-slate-700 bg-slate-900 sm:max-w-md" data-testid="suggest-shop-modal">
         <DialogHeader>
-          <DialogTitle className="font-heading">Adicionar borracharia ou oficina</DialogTitle>
+          <DialogTitle className="font-heading">Adicionar local para ciclistas</DialogTitle>
           <DialogDescription>Ajude outros ciclistas. A equipe confere antes de publicar no mapa.</DialogDescription>
         </DialogHeader>
         {!user ? (

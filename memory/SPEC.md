@@ -127,3 +127,8 @@ tempo real com alerta de proximidade, cadastro/login e gamificação (XP, nívei
 ## Localização ao vivo no mapa
 - `useRide` mantém um `watchPosition` passivo quando não há pedal (`here`/`hereHeading`): `state.pos` e `state.heading` valem para o pedal enquanto `riding` e para a localização atual do aparelho quando parado. Não conta km nem dispara radar (o `useHazardWatch` só avalia com `riding`). Pausa com o app em segundo plano e não insiste se o usuário negar a permissão.
 - `MapPage` centraliza uma única vez (zoom 16) na primeira posição, a menos que haja `?lat=` (link da caixa de alertas), pedal em andamento ou o usuário já tenha arrastado o mapa. O botão "Recentralizar" aparece sempre que há posição e a câmera está solta.
+
+## Bicicletar / aluguel de bike
+- Reusa `shops` com `kind="bicicletar"`. `/admin/import-shops` também consulta `amenity=bicycle_rental` (Overpass, timeout 60, limite 900); `_shop_from_osm` nomeia "Estação Bicicletar" quando nome/rede/operadora citam bicicletar ou serttel, senão "Aluguel de bicicletas".
+- `MapPage` filtra com `visibleShops` (useMemo): `bicicletar` segue o toggle `showBikeShare`, os demais seguem `showShops`.
+- Sem disponibilidade em tempo real. Teste: `backend/tests/test_shop_osm_mapping.py`.
