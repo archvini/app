@@ -32,7 +32,7 @@ import { clearSavedTrip, readSavedTrip, useNavigation } from "@/hooks/useNavigat
 import type { SavedTrip } from "@/hooks/useNavigation";
 import { useWakeLock } from "@/hooks/useWakeLock";
 import type { NavPhase } from "@/hooks/useNavigation";
-import { playArrivalSound, useRide } from "@/hooks/useRide";
+import { playArrivalSound, playRewardSound, sound, useRide } from "@/hooks/useRide";
 import { apiDelete, apiDetail, apiGet, apiPost } from "@/lib/api";
 import { OBSTACLE_TYPES, SEVERITY_LABELS } from "@/lib/types";
 import type { BikeLane, Obstacle, ObstacleType, ReportResult, Shop } from "@/lib/types";
@@ -159,6 +159,25 @@ export default function MapPage() {
   // só na chegada: mexer no botão de som depois não deve repetir o jingle
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
+  useEffect(() => {
+    sound.on = soundOn;
+  }, [soundOn]);
+
+  // voz da rota: avisa a próxima manobra uma vez, a ~100 m ("Em 100 metros, vire à direita")
+  const spokenStep = useRef<unknown>(null);
+  useEffect(() => {
+    if (phase !== "navigating" || !soundOn || !nav.nextStep) return;
+    if (nav.distToNextM > 100 || spokenStep.current === nav.nextStep) return;
+    spokenStep.current = nav.nextStep;
+    try {
+      const u = new SpeechSynthesisUtterance(`Em ${Math.max(10, Math.round(nav.distToNextM / 10) * 10)} metros, ${nav.nextStep.instruction}`);
+      u.lang = "pt-BR";
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(u);
+    } catch {
+      // sem voz
+    }
+  }, [phase, soundOn, nav.nextStep, nav.distToNextM]);
   useLaneNotice(ride.pos, lanes); // "você está na ciclofaixa..."
 
   // câmera acompanha o ciclista enquanto pedala/navega; arrastar o mapa solta a câmera (botão "recentralizar" volta)
@@ -301,6 +320,7 @@ export default function MapPage() {
       void queryClient.invalidateQueries({ queryKey: ["me"] });
       setSelected((s) => (s ? { ...s, confirms: res.obstacle.confirms } : s));
       toast.success("Alerta confirmado! +25 XP");
+      if (res.new_badges.length > 0) playRewardSound();
       for (const b of res.new_badges) {
         toast.success(`Novo selo desbloqueado: ${b.name}`, { description: b.desc });
         confetti({ particleCount: 130, spread: 75, origin: { y: 0.7 }, colors: ["#10B981", "#F97316", "#FBBF24"] });
