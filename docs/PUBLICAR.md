@@ -133,3 +133,12 @@ As ciclovias de exemplo do seed podem ficar duplicadas sobre as importadas; se q
 - Ao chegar a ~25 m de uma ciclovia ou ciclofaixa, aparece um aviso no topo: "Você está na ciclofaixa: Rua X. Ande com cuidado." (com uma vibração curta). Funciona com o GPS ligado, em viagem ou não.
 - Avisa uma vez por trecho: só repete se o ciclista sair (mais de ~60 m) e voltar, e no máximo a cada 5 minutos por ciclovia.
 - Só frontend: basta o Redeploy do site. O nome mostrado é o cadastrado da ciclovia.
+
+## 19. Som de chegada ao destino
+- Ao chegar no destino da viagem, toca um jingle curto (arpejo alegre, ~1 s), uma voz diz "Você chegou ao seu destino. Boa pedalada!" e o celular vibra. O botão de som do mapa silencia jingle e voz (a vibração continua).
+- Os sons são gerados no próprio celular (Web Audio), sem arquivos de áudio nem biblioteca nova. Só frontend: Redeploy do site.
+- **Mais sons (para testar e decidir quais ficam):**
+  - *Fim do pedal registrado:* duas notas suaves descendo. Não toca logo depois do jingle de chegada.
+  - *Conquista (subiu de nível, selo novo ou selo ao confirmar alerta):* escala rápida e brilhante, mais aguda.
+  - *Voz da rota:* a ~100 m da próxima manobra, fala "Em 100 metros, vire à direita".
+  - Todos obedecem ao botão de som do mapa. Para tirar algum que não ficar bom, é só remover a chamada correspondente (`playFinishSound`, `playRewardSound` em `useRide.ts`; o bloco "voz da rota" em `MapPage.tsx`).

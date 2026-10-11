@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { ApiError, apiPost } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { formatKm, haversine } from "@/lib/types";
-import type { BikeLane, RideResult } from "@/lib/types";
+import type { BikeLane, RideResult, User } from "@/lib/types";
 
 export interface RidePos {
   lat: number;
@@ -79,6 +79,101 @@ export function playAlertBeep(level: "warn" | "danger" = "warn"): void {
   }
 }
 
+/** Jingle de chegada: arpejo ascendente (dó-mi-sol-dó) em tom suave, terminando num acorde longo. Alegre, curto (~1 s). */
+export function playArrivalSound(): void {
+  sound.arrivedAt = Date.now();
+  try {
+    const Ctx =
+      window.AudioContext ??
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    const t0 = ctx.currentTime;
+    const notes: [number, number, number][] = [
+      [523.25, 0, 0.16],
+      [659.25, 0.16, 0.16],
+      [783.99, 0.32, 0.16],
+      [1046.5, 0.48, 0.7], // dó agudo sustentado
+      [659.25, 0.48, 0.7],
+      [783.99, 0.48, 0.7],
+    ];
+    for (const [freq, at, dur] of notes) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(freq, t0 + at);
+      gain.gain.setValueAtTime(0.0001, t0 + at);
+      gain.gain.exponentialRampToValueAtTime(0.09, t0 + at + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0 + at + dur);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(t0 + at);
+      osc.stop(t0 + at + dur + 0.05);
+    }
+    setTimeout(() => void ctx.close(), 1500);
+  } catch {
+    // áudio bloqueado — o aviso visual segue
+  }
+}
+
+/** Liga/desliga os sons novos (fim de pedal, conquista, jingle). O MapPage espelha o botão de som aqui. */
+export const sound = { on: true, arrivedAt: 0 };
+
+function playNotes(notes: [number, number, number][], type: OscillatorType, peak: number): void {
+  if (!sound.on) return;
+  try {
+    const Ctx =
+      window.AudioContext ??
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    const t0 = ctx.currentTime;
+    let end = 0;
+    for (const [freq, at, dur] of notes) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, t0 + at);
+      gain.gain.setValueAtTime(0.0001, t0 + at);
+      gain.gain.exponentialRampToValueAtTime(peak, t0 + at + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0 + at + dur);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(t0 + at);
+      osc.stop(t0 + at + dur + 0.05);
+      end = Math.max(end, at + dur);
+    }
+    setTimeout(() => void ctx.close(), (end + 0.3) * 1000);
+  } catch {
+    // áudio bloqueado
+  }
+}
+
+/** Fim do pedal registrado: duas notas descendentes, suaves ("pronto, salvei"). Fica quieto logo após o jingle de chegada. */
+export function playFinishSound(): void {
+  if (Date.now() - sound.arrivedAt < 8000) return;
+  playNotes(
+    [
+      [783.99, 0, 0.22],
+      [523.25, 0.2, 0.45],
+    ],
+    "sine",
+    0.08,
+  );
+}
+
+/** Conquista (nível novo ou selo): escala rápida e brilhante, mais aguda que o jingle de chegada. */
+export function playRewardSound(): void {
+  playNotes(
+    [
+      [1046.5, 0, 0.12],
+      [1318.5, 0.1, 0.12],
+      [1568, 0.2, 0.12],
+      [2093, 0.3, 0.5],
+    ],
+    "sine",
+    0.07,
+  );
+}
+
 /** Rastreio de pedalada: GPS real (watchPosition) + rota demo interpolada. Registra km no servidor ao encerrar. */
 export function useRide() {
   const [riding, setRiding] = useState(false);
@@ -101,12 +196,16 @@ export function useRide() {
     const rounded = Math.round(km * 100) / 100;
     if (rounded < 0.05) return;
     try {
+      const prevLevel = queryClient.getQueryData<User>(["me"])?.level ?? 0;
       const res = await apiPost<RideResult>("/rides", { km: rounded });
       toast.success(`Pedalada registrada: ${formatKm(rounded)} · +${Math.round(rounded * 10)} XP`);
       for (const b of res.new_badges) {
         toast.success(`Novo selo desbloqueado: ${b.name}`, { description: b.desc });
         confetti({ particleCount: 130, spread: 75, origin: { y: 0.7 }, colors: ["#10B981", "#F97316", "#FBBF24"] });
       }
+      if (prevLevel > 0 && res.user.level > prevLevel) toast.success(`Você subiu para o nível ${res.user.level}!`);
+      if (res.new_badges.length > 0 || (prevLevel > 0 && res.user.level > prevLevel)) playRewardSound();
+      else playFinishSound();
       void queryClient.invalidateQueries({ queryKey: ["me"] });
       void queryClient.invalidateQueries({ queryKey: ["missions"] });
     } catch (err) {
