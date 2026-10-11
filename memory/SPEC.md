@@ -123,3 +123,7 @@ tempo real com alerta de proximidade, cadastro/login e gamificação (XP, nívei
 - Navegando: câmera `easeTo` inclinada (`NAV_PITCH = 60`), girando com o rumo, ciclista um pouco abaixo do centro; a seta é um marcador com `pitchAlignment/rotationAlignment: "map"` (deitada sobre a rua). Fora da navegação: norte para cima e plano. Ao encerrar a viagem o mapa volta plano. Computador: botões +/−/bússola (`NavigationControl`); celular: dois dedos giram/inclinam.
 - `MiniMap` (caixa de alertas) continua em Leaflet com tiles raster do OSM (uso baixo, só gestão).
 - Não testado em tela real quando foi escrito (sem instalar dependências no ambiente de desenvolvimento).
+
+## Localização ao vivo no mapa
+- `useRide` mantém um `watchPosition` passivo quando não há pedal (`here`/`hereHeading`): `state.pos` e `state.heading` valem para o pedal enquanto `riding` e para a localização atual do aparelho quando parado. Não conta km nem dispara radar (o `useHazardWatch` só avalia com `riding`). Pausa com o app em segundo plano e não insiste se o usuário negar a permissão.
+- `MapPage` centraliza uma única vez (zoom 16) na primeira posição, a menos que haja `?lat=` (link da caixa de alertas), pedal em andamento ou o usuário já tenha arrastado o mapa. O botão "Recentralizar" aparece sempre que há posição e a câmera está solta.

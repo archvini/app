@@ -319,6 +319,7 @@ export default function FortalezaMap({
   const knownIdsRef = useRef<Set<string>>(new Set());
   const populatedRef = useRef(false);
   const fittedRef = useRef(false);
+  const focusedRef = useRef(false); // já foi para a localização do ciclista: o enquadramento inicial das ciclovias não pode desfazer
 
   // valores "mais recentes" lidos dentro de handlers de longa vida
   const pickRef = useRef<{ active: boolean; cb?: (lat: number, lng: number) => void }>({ active: false });
@@ -471,6 +472,7 @@ export default function FortalezaMap({
       knownIdsRef.current = new Set();
       populatedRef.current = false;
       fittedRef.current = false;
+      focusedRef.current = false;
       userMarkerRef.current = null;
       destMarkerRef.current = null;
       tapMarkerRef.current = null;
@@ -500,6 +502,7 @@ export default function FortalezaMap({
     );
     if (!fittedRef.current && bikeLanes.length > 0) {
       fittedRef.current = true;
+      if (focusedRef.current) return;
       const own = bikeLanes.filter((l) => l.source !== "osm");
       const bounds = new maplibregl.LngLatBounds();
       for (const l of own.length > 0 ? own : bikeLanes) for (const p of l.coordinates as [number, number][]) bounds.extend(flip(p));
@@ -755,6 +758,7 @@ export default function FortalezaMap({
     const map = mapRef.current;
     if (!focus || !ready || !map) return;
     followRef.current = false;
+    focusedRef.current = true;
     map.flyTo({ center: [focus.lng, focus.lat], zoom: focus.zoom ?? 16, duration: 800 });
   }, [focus, ready]);
 
