@@ -128,3 +128,8 @@ As ciclovias de exemplo do seed podem ficar duplicadas sobre as importadas; se q
 - **Passo obrigatório:** depois do Redeploy da API, abra uma vez `https://SEU-API/admin/import-shops?token=SEED_TOKEN`. É seguro repetir (não duplica).
 - O OpenStreetMap pode ter **menos estações que as ~270 oficiais**. Quem estiver logado pode sugerir estações que faltam (passam pela moderação).
 - Não existe disponibilidade de bikes em tempo real (não há API aberta confirmada). Backend mudou: precisa de Redeploy da API e do site.
+
+## 18. Aviso ao entrar numa ciclovia/ciclofaixa
+- Ao chegar a ~25 m de uma ciclovia ou ciclofaixa, aparece um aviso no topo: "Você está na ciclofaixa: Rua X. Ande com cuidado." (com uma vibração curta). Funciona com o GPS ligado, em viagem ou não.
+- Avisa uma vez por trecho: só repete se o ciclista sair (mais de ~60 m) e voltar, e no máximo a cada 5 minutos por ciclovia.
+- Só frontend: basta o Redeploy do site. O nome mostrado é o cadastrado da ciclovia.
