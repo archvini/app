@@ -32,7 +32,7 @@ import { clearSavedTrip, readSavedTrip, useNavigation } from "@/hooks/useNavigat
 import type { SavedTrip } from "@/hooks/useNavigation";
 import { useWakeLock } from "@/hooks/useWakeLock";
 import type { NavPhase } from "@/hooks/useNavigation";
-import { useRide } from "@/hooks/useRide";
+import { playArrivalSound, useRide } from "@/hooks/useRide";
 import { apiDelete, apiDetail, apiGet, apiPost } from "@/lib/api";
 import { OBSTACLE_TYPES, SEVERITY_LABELS } from "@/lib/types";
 import type { BikeLane, Obstacle, ObstacleType, ReportResult, Shop } from "@/lib/types";
@@ -142,6 +142,23 @@ export default function MapPage() {
   // radar de perigos: distância/direção em tempo real, aviso por som, voz e vibração a cada nível
   const watch = useHazardWatch({ ride, obstacles: filtered, lanes, soundOn });
   const { primary, dismiss } = watch;
+  // chegada ao destino: jingle + voz (respeita o botão de silenciar) e vibração longa
+  useEffect(() => {
+    if (phase !== "arrived") return;
+    navigator.vibrate?.([200, 100, 200, 100, 400]);
+    if (!soundOn) return;
+    playArrivalSound();
+    try {
+      const u = new SpeechSynthesisUtterance("Você chegou ao seu destino. Boa pedalada!");
+      u.lang = "pt-BR";
+      window.speechSynthesis.cancel();
+      setTimeout(() => window.speechSynthesis.speak(u), 1100); // depois do jingle
+    } catch {
+      // sem voz
+    }
+  // só na chegada: mexer no botão de som depois não deve repetir o jingle
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
   useLaneNotice(ride.pos, lanes); // "você está na ciclofaixa..."
 
   // câmera acompanha o ciclista enquanto pedala/navega; arrastar o mapa solta a câmera (botão "recentralizar" volta)

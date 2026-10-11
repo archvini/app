@@ -135,3 +135,6 @@ tempo real com alerta de proximidade, cadastro/login e gamificação (XP, nívei
 
 ## Aviso de ciclovia/ciclofaixa
 - `hooks/useLaneNotice(pos, lanes)` (chamado no `MapPage`): acha a faixa mais próxima a cada posição; entra a ≤25 m, sai a >60 m (histerese), cooldown 5 min por faixa; dispara `toast.info` + `navigator.vibrate`. Sem som/voz (diferente do radar de perigos).
+
+## Som de chegada
+- `playArrivalSound()` em `hooks/useRide.ts` (osciladores triangle, dó-mi-sol-dó). `MapPage` dispara quando `phase` vira `arrived`: vibração + (se `soundOn`) jingle e voz pt-BR. Deps só `[phase]` para não repetir ao mexer no botão de som.

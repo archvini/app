@@ -133,3 +133,7 @@ As ciclovias de exemplo do seed podem ficar duplicadas sobre as importadas; se q
 - Ao chegar a ~25 m de uma ciclovia ou ciclofaixa, aparece um aviso no topo: "Você está na ciclofaixa: Rua X. Ande com cuidado." (com uma vibração curta). Funciona com o GPS ligado, em viagem ou não.
 - Avisa uma vez por trecho: só repete se o ciclista sair (mais de ~60 m) e voltar, e no máximo a cada 5 minutos por ciclovia.
 - Só frontend: basta o Redeploy do site. O nome mostrado é o cadastrado da ciclovia.
+
+## 19. Som de chegada ao destino
+- Ao chegar no destino da viagem, toca um jingle curto (arpejo alegre, ~1 s), uma voz diz "Você chegou ao seu destino. Boa pedalada!" e o celular vibra. O botão de som do mapa silencia jingle e voz (a vibração continua).
+- Os sons são gerados no próprio celular (Web Audio), sem arquivos de áudio nem biblioteca nova. Só frontend: Redeploy do site.

@@ -79,6 +79,41 @@ export function playAlertBeep(level: "warn" | "danger" = "warn"): void {
   }
 }
 
+/** Jingle de chegada: arpejo ascendente (dó-mi-sol-dó) em tom suave, terminando num acorde longo. Alegre, curto (~1 s). */
+export function playArrivalSound(): void {
+  try {
+    const Ctx =
+      window.AudioContext ??
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    const t0 = ctx.currentTime;
+    const notes: [number, number, number][] = [
+      [523.25, 0, 0.16],
+      [659.25, 0.16, 0.16],
+      [783.99, 0.32, 0.16],
+      [1046.5, 0.48, 0.7], // dó agudo sustentado
+      [659.25, 0.48, 0.7],
+      [783.99, 0.48, 0.7],
+    ];
+    for (const [freq, at, dur] of notes) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(freq, t0 + at);
+      gain.gain.setValueAtTime(0.0001, t0 + at);
+      gain.gain.exponentialRampToValueAtTime(0.09, t0 + at + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0 + at + dur);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(t0 + at);
+      osc.stop(t0 + at + dur + 0.05);
+    }
+    setTimeout(() => void ctx.close(), 1500);
+  } catch {
+    // áudio bloqueado — o aviso visual segue
+  }
+}
+
 /** Rastreio de pedalada: GPS real (watchPosition) + rota demo interpolada. Registra km no servidor ao encerrar. */
 export function useRide() {
   const [riding, setRiding] = useState(false);
