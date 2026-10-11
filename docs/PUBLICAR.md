@@ -116,3 +116,8 @@ As ciclovias de exemplo do seed podem ficar duplicadas sobre as importadas; se q
 - **Teste primeiro na prévia (Preview) da Vercel**, no celular, antes de dar Merge: mapa aparece escuro, ciclovias e alertas aparecem, o toque no mapa funciona e, ao iniciar uma viagem (ou "Simular"), o mapa inclina e gira com a seta.
 - Se o estilo do OpenFreeMap sair do ar, o app troca sozinho para o mapa de imagens do OpenStreetMap (sem 3D).
 - Crédito obrigatório: o rodapé do mapa mostra "OpenFreeMap / OpenMapTiles / OpenStreetMap contributors"; não remova.
+
+## 16. Localização assim que abre o mapa
+- Ao abrir o mapa, o navegador pede permissão de localização (uma vez). Permitindo, o ponto do ciclista aparece na hora e o mapa centraliza nele, sem precisar iniciar uma viagem. Negando, o mapa funciona normal e o botão do GPS continua disponível.
+- Fora do pedal, a localização não registra km nem dispara avisos de perigo. Só o GPS ligado (pedal ou viagem) faz isso.
+- Só frontend: basta o Redeploy do site.

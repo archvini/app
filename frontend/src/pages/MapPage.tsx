@@ -189,7 +189,18 @@ export default function MapPage() {
     setFocus({ lat: o.lat, lng: o.lng, zoom: 16 });
   }, []);
 
-  const onUserPan = useCallback(() => setFollow(false), []);
+  // ao abrir o mapa, centraliza uma vez na localização do ciclista (se ele ainda não mexeu no mapa nem veio de um link)
+  const centeredRef = useRef(false);
+  const onUserPan = useCallback(() => {
+    centeredRef.current = true;
+    setFollow(false);
+  }, []);
+  useEffect(() => {
+    if (centeredRef.current || !ride.pos) return;
+    centeredRef.current = true;
+    if (searchParams.get("lat") || ride.riding) return; // link "Ver no mapa" ou pedal em andamento já têm câmera própria
+    setFocus({ lat: ride.pos.lat, lng: ride.pos.lng, zoom: 16 });
+  }, [ride.pos, ride.riding, searchParams]);
 
   // toque num ponto vazio do mapa = pino com as opções "ir até aqui" / "reportar aqui"
   const { chooseDestination } = nav;

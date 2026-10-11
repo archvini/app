@@ -87,6 +87,9 @@ export function useRide() {
   const [heading, setHeading] = useState<number | null>(null);
   const [speedKmh, setSpeedKmh] = useState(0);
   const [sessionKm, setSessionKm] = useState(0);
+  // posição "de passeio": o ponto azul aparece assim que o app abre, antes de iniciar qualquer pedal
+  const [here, setHere] = useState<RidePos | null>(null);
+  const [hereHeading, setHereHeading] = useState<number | null>(null);
 
   const watchRef = useRef<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -248,6 +251,41 @@ export function useRide() {
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [riding, demo, onPos]);
 
+  // Localização ao vivo fora do pedal: não conta km nem dispara alertas. Para sozinha com o app em segundo plano
+  // (economiza bateria) e se o usuário negar a permissão (sem insistir).
+  useEffect(() => {
+    if (riding || !("geolocation" in navigator)) return;
+    let id: number | null = null;
+    let denied = false;
+    const start = () => {
+      if (id !== null || denied) return;
+      id = navigator.geolocation.watchPosition(
+        (p) => {
+          setHere({ lat: p.coords.latitude, lng: p.coords.longitude });
+          setHereHeading(typeof p.coords.heading === "number" && Number.isFinite(p.coords.heading) ? p.coords.heading : null);
+        },
+        (err) => {
+          if (err.code === err.PERMISSION_DENIED) {
+            denied = true;
+            halt();
+          }
+        },
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 },
+      );
+    };
+    const halt = () => {
+      if (id !== null) navigator.geolocation.clearWatch(id);
+      id = null;
+    };
+    const onVisibility = () => (document.visibilityState === "visible" ? start() : halt());
+    start();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      halt();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [riding]);
+
   useEffect(
     () => () => {
       // desmontagem: apenas limpa rastreio (registro de km só em stop explícito)
@@ -257,6 +295,18 @@ export function useRide() {
     [],
   );
 
-  const state: RideState = { riding, demo, pos, heading, speedKmh, sessionKm, toggle, startDemo, startRoute, stop };
+  // pedalando: a posição do pedal; parado: a localização atual do aparelho (se houver)
+  const state: RideState = {
+    riding,
+    demo,
+    pos: riding ? pos : (here ?? pos),
+    heading: riding ? heading : hereHeading,
+    speedKmh,
+    sessionKm,
+    toggle,
+    startDemo,
+    startRoute,
+    stop,
+  };
   return state;
 }
