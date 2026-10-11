@@ -44,7 +44,7 @@ tempo real com alerta de proximidade, cadastro/login e gamificação (XP, nívei
 - `components/map/FortalezaMap.tsx`: câmera que segue o ciclista (rAF suave), seta de direção que gira com o rumo (`useRide.heading`), rota com contorno, pino de destino, marcadores de obstáculo atualizados incrementalmente (sem piscar no refetch de 10 s), obstáculos no caminho com anel laranja.
 - Gestos: arrastar (solta a câmera → botão "recentralizar"), pinça/duplo toque (Leaflet), segurar ~0,55 s no mapa = escolher destino, painel inferior arrastável com inércia (`BottomSheet.tsx`), cartão de alerta fecha deslizando para baixo. No desktop o painel vira lateral esquerda.
 - "Simular" percorre a rota virtualmente (`useRide.startRoute`) — para testar sem GPS.
-- Limitação: Leaflet não rotaciona o mapa (o norte fica sempre para cima; só a seta gira). Rotação/inclinação estilo Uber exigiria migrar para MapLibre GL.
+- (Resolvido em "Mapa 3D" abaixo: o mapa principal migrou para MapLibre GL.)
 
 ## Seed (backend/seed.py — idempotente)
 - 7 ciclovias/ciclofaixas (Beira-Mar, Washington Soares, Aguanambi, Domingos Olímpio, Santos Dumont, Godofredo Maciel, Parque do Cocó)
@@ -116,3 +116,10 @@ tempo real com alerta de proximidade, cadastro/login e gamificação (XP, nívei
 - `notifications` (por usuário, TTL 60 d; kinds follow/alert_ok/alert_no/shop_ok/shop_no) e `announcements` (avisos para todos; lidos via `users.notif_seen_at`). `lib/notify.notify()` é best-effort e ignora contas `seed-`.
 - Rotas: `GET /notifications`, `/unread-count`, `POST /read-all`, `/{id}/read`, `DELETE /notifications`, `POST|DELETE /announcements` (gestor). Gatilhos: follow novo, approve/reject de alerta e de local.
 - Frontend: `NotificationBell` (Popover, z 2600) na Navbar; `AnnouncementForm` na caixa de alertas. Sem DMs.
+
+## Mapa 3D (MapLibre GL + OpenFreeMap)
+- `FortalezaMap` agora usa **MapLibre GL 4.7.1** (mesmas props de antes) com o estilo vetorial `https://tiles.openfreemap.org/styles/positron` (OpenFreeMap: dados do OpenStreetMap, sem chave de API, atualizado toda semana). `darken()` pinta o estilo claro de escuro por código e troca os prédios planos por `fill-extrusion` (prédios 3D, altura `render_height`). Se o estilo não carregar, cai para tiles de imagem do OSM (`RASTER_FALLBACK`).
+- Camadas de desenho (GeoJSON): `lanes` (3 camadas: sólida, ciclofaixa tracejada, aproximada), `route`, `guide`, `draw`/`drawpts`, `radar` (círculo em metros como polígono). Marcadores continuam HTML (`htmlMarker`): perigos, locais, destino, pino de toque e o ciclista.
+- Navegando: câmera `easeTo` inclinada (`NAV_PITCH = 60`), girando com o rumo, ciclista um pouco abaixo do centro; a seta é um marcador com `pitchAlignment/rotationAlignment: "map"` (deitada sobre a rua). Fora da navegação: norte para cima e plano. Ao encerrar a viagem o mapa volta plano. Computador: botões +/−/bússola (`NavigationControl`); celular: dois dedos giram/inclinam.
+- `MiniMap` (caixa de alertas) continua em Leaflet com tiles raster do OSM (uso baixo, só gestão).
+- Não testado em tela real quando foi escrito (sem instalar dependências no ambiente de desenvolvimento).

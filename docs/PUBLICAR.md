@@ -109,3 +109,10 @@ As ciclovias de exemplo do seed podem ficar duplicadas sobre as importadas; se q
 - A conta de gestão envia avisos para todos em **Caixa de alertas → Enviar aviso do app**.
 - Não precisa de configuração nova: as coleções `notifications` e `announcements` são criadas sozinhas. Notificações somem após 60 dias.
 - **Mensagens diretas ainda não existem** (o chat é público). Quando houver, é só chamar `notify()` ao receber uma mensagem.
+
+## 15. Mapa 3D (MapLibre + OpenFreeMap)
+- O mapa principal agora é vetorial, gira e inclina durante a viagem, com prédios em 3D. Fonte: **OpenFreeMap** (gratuito, sem cadastro, sem chave; dados do OpenStreetMap). Nada a configurar na Vercel.
+- Esta mudança adiciona uma biblioteca nova (`maplibre-gl`). A Vercel instala sozinha no deploy do site; só precisa de **Redeploy do frontend**.
+- **Teste primeiro na prévia (Preview) da Vercel**, no celular, antes de dar Merge: mapa aparece escuro, ciclovias e alertas aparecem, o toque no mapa funciona e, ao iniciar uma viagem (ou "Simular"), o mapa inclina e gira com a seta.
+- Se o estilo do OpenFreeMap sair do ar, o app troca sozinho para o mapa de imagens do OpenStreetMap (sem 3D).
+- Crédito obrigatório: o rodapé do mapa mostra "OpenFreeMap / OpenMapTiles / OpenStreetMap contributors"; não remova.

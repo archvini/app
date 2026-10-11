@@ -136,7 +136,7 @@
     }
 }
 
-/* ---- Marcadores customizados do mapa (Leaflet divIcon) ---- */
+/* ---- Marcadores customizados do mapa (MapLibre e Leaflet) ---- */
 .vdb-marker-wrap,
 .vdb-user-wrap {
   background: transparent !important;
@@ -509,4 +509,52 @@
 
 .leaflet-tooltip-top::before {
   border-top-color: #334155 !important;
+}
+/* ---- MapLibre (mapa principal) sobre o tema escuro ---- */
+.maplibregl-map {
+  background: #0b1120;
+  font-family: inherit;
+}
+
+.maplibregl-ctrl-attrib {
+  background: rgba(9, 13, 22, 0.75) !important;
+  color: #94a3b8 !important;
+  font-size: 10px;
+}
+
+.maplibregl-ctrl-attrib a {
+  color: #38bdf8 !important;
+}
+
+.maplibregl-ctrl-group {
+  background: #0f172a !important;
+  border: 1px solid #334155;
+  box-shadow: none !important;
+}
+
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid #334155 !important;
+}
+
+/* os ícones dos botões são escuros por padrão: invertidos ficam claros no fundo escuro */
+.maplibregl-ctrl-icon {
+  filter: invert(1);
+}
+
+.vdb-popup .maplibregl-popup-content {
+  background: #0f172a;
+  color: #f8fafc;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+}
+
+.vdb-popup.maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
+  border-top-color: #334155;
+}
+
+.vdb-popup.maplibregl-popup-anchor-top .maplibregl-popup-tip {
+  border-bottom-color: #334155;
 }
