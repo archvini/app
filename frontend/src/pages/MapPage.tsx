@@ -5,7 +5,7 @@ import confetti from "canvas-confetti";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
-import { FlagTriangleRight, Layers, LocateFixed, Navigation, Pencil, Volume2, VolumeX, Wrench, X } from "lucide-react";
+import { Bike, FlagTriangleRight, Layers, LocateFixed, Navigation, Pencil, Volume2, VolumeX, Wrench, X } from "lucide-react";
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
 
 import BottomSheet from "@/components/map/BottomSheet";
@@ -74,6 +74,11 @@ export default function MapPage() {
   const [drawPoints, setDrawPoints] = useState<[number, number][]>([]);
   const [eraseTarget, setEraseTarget] = useState<BikeLane | null>(null);
   const [showShops, setShowShops] = useState(true);
+  const [showBikeShare, setShowBikeShare] = useState(true);
+  const visibleShops = useMemo(
+    () => shops.filter((s) => (s.kind === "bicicletar" ? showBikeShare : showShops)),
+    [shops, showShops, showBikeShare],
+  );
   const [selectedShop, setSelectedShop] = useState<Shop | null>(null);
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [suggestCoords, setSuggestCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -339,7 +344,7 @@ export default function MapPage() {
         onSelectObstacle={onSelectObstacle}
         drawPoints={editorMode === "draw" ? drawPoints : undefined}
         onSelectLane={editorMode === "erase" ? setEraseTarget : undefined}
-        shops={showShops ? shops : undefined}
+        shops={visibleShops}
         onSelectShop={onSelectShop}
         focus={focus}
         className="absolute inset-0 h-full w-full"
@@ -482,6 +487,21 @@ export default function MapPage() {
           >
             <Wrench className={cn("h-4 w-4 text-sky-400", !showShops && "opacity-40")} />
             Borracharias e oficinas
+          </button>
+          <button
+            type="button"
+            data-testid="filter-bicicletar"
+            onClick={() => {
+              setShowBikeShare((v) => !v);
+              setSelectedShop(null);
+            }}
+            className={cn(
+              "flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-xs font-medium transition-colors",
+              showBikeShare ? "bg-slate-800 text-white" : "text-slate-500 hover:bg-slate-800/50",
+            )}
+          >
+            <Bike className={cn("h-4 w-4 text-amber-400", !showBikeShare && "opacity-40")} />
+            Bicicletar e aluguel de bike
           </button>
           {user?.is_moderator && (
             <button

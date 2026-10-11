@@ -121,3 +121,10 @@ As ciclovias de exemplo do seed podem ficar duplicadas sobre as importadas; se q
 - Ao abrir o mapa, o navegador pede permissão de localização (uma vez). Permitindo, o ponto do ciclista aparece na hora e o mapa centraliza nele, sem precisar iniciar uma viagem. Negando, o mapa funciona normal e o botão do GPS continua disponível.
 - Fora do pedal, a localização não registra km nem dispara avisos de perigo. Só o GPS ligado (pedal ou viagem) faz isso.
 - Só frontend: basta o Redeploy do site.
+
+## 17. Bicicletar e pontos de aluguel de bike
+- O mapa tem uma nova camada, **"Bicicletar e aluguel de bike"** (painel de camadas, ícone de bicicleta âmbar), que pode ser ligada/desligada separada das borracharias.
+- Os pontos vêm do OpenStreetMap (`amenity=bicycle_rental`) e usam o mesmo sistema de locais (`shops`), com o tipo novo `bicicletar`.
+- **Passo obrigatório:** depois do Redeploy da API, abra uma vez `https://SEU-API/admin/import-shops?token=SEED_TOKEN`. É seguro repetir (não duplica).
+- O OpenStreetMap pode ter **menos estações que as ~270 oficiais**. Quem estiver logado pode sugerir estações que faltam (passam pela moderação).
+- Não existe disponibilidade de bikes em tempo real (não há API aberta confirmada). Backend mudou: precisa de Redeploy da API e do site.

@@ -37,7 +37,7 @@ export interface PublicUser {
   follows_me: boolean;
 }
 
-export type ShopKind = "borracharia" | "oficina" | "autoreparo";
+export type ShopKind = "borracharia" | "oficina" | "autoreparo" | "bicicletar";
 
 export interface Shop {
   id: string;

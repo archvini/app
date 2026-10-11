@@ -25,6 +25,13 @@ export const SHOP_META: Record<ShopKind, { label: string; plural: string; color:
     // bomba/ferramenta: cabo em T e haste
     paths: ["M6 4h12", "M12 4v9", "M8 13h8", "M10 13v7", "M14 13v7", "M8 20h8"],
   },
+  bicicletar: {
+    label: "Bicicletar / aluguel de bike",
+    plural: "Bicicletar",
+    color: "#F59E0B",
+    // bicicleta: duas rodas, quadro e cabeça
+    paths: ["M2 17.5a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0", "M15 17.5a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0", "M12 17.5V14l-3-3 4-3 2 3h2", "M14 5a1 1 0 1 0 2 0a1 1 0 1 0-2 0"],
+  },
 };
 
 export function shopSvg(kind: ShopKind, size = 18, stroke = "#fff"): string {

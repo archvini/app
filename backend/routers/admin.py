@@ -80,14 +80,15 @@ async def run_snap(token: str, force: int = 0):
 
 OVERPASS_URLS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter"]
 FORTALEZA_BBOX = "-3.92,-38.65,-3.68,-38.40"  # sul, oeste, norte, leste
-OVERPASS_QUERY = f"""[out:json][timeout:40];
+OVERPASS_QUERY = f"""[out:json][timeout:60];
 (
   nwr["shop"="bicycle"]({FORTALEZA_BBOX});
   nwr["shop"="tyres"]({FORTALEZA_BBOX});
   nwr["amenity"="bicycle_repair_station"]({FORTALEZA_BBOX});
   nwr["craft"="bicycle_repair"]({FORTALEZA_BBOX});
+  nwr["amenity"="bicycle_rental"]({FORTALEZA_BBOX});
 );
-out center tags 400;"""
+out center tags 900;"""
 
 
 def _shop_from_osm(el: dict) -> dict | None:
@@ -99,6 +100,11 @@ def _shop_from_osm(el: dict) -> dict | None:
     name = (tags.get("name") or "").strip()
     if tags.get("amenity") == "bicycle_repair_station":
         kind, name = "autoreparo", name or "Ponto de autorreparo"
+    elif tags.get("amenity") == "bicycle_rental":
+        # estação do Bicicletar (rede pública) ou loja de aluguel de bicicletas
+        ident = " ".join(tags.get(k, "") for k in ("name", "network", "operator", "brand")).lower()
+        kind = "bicicletar"
+        name = name or ("Estação Bicicletar" if "bicicletar" in ident or "serttel" in ident else "Aluguel de bicicletas")
     elif tags.get("shop") == "tyres" or "borrach" in name.lower():
         kind, name = "borracharia", name or "Borracharia"
     else:
