@@ -132,3 +132,6 @@ tempo real com alerta de proximidade, cadastro/login e gamificação (XP, nívei
 - Reusa `shops` com `kind="bicicletar"`. `/admin/import-shops` também consulta `amenity=bicycle_rental` (Overpass, timeout 60, limite 900); `_shop_from_osm` nomeia "Estação Bicicletar" quando nome/rede/operadora citam bicicletar ou serttel, senão "Aluguel de bicicletas".
 - `MapPage` filtra com `visibleShops` (useMemo): `bicicletar` segue o toggle `showBikeShare`, os demais seguem `showShops`.
 - Sem disponibilidade em tempo real. Teste: `backend/tests/test_shop_osm_mapping.py`.
+
+## Aviso de ciclovia/ciclofaixa
+- `hooks/useLaneNotice(pos, lanes)` (chamado no `MapPage`): acha a faixa mais próxima a cada posição; entra a ≤25 m, sai a >60 m (histerese), cooldown 5 min por faixa; dispara `toast.info` + `navigator.vibrate`. Sem som/voz (diferente do radar de perigos).

@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { useHazardWatch } from "@/hooks/useHazardWatch";
+import { useLaneNotice } from "@/hooks/useLaneNotice";
 import { clearSavedTrip, readSavedTrip, useNavigation } from "@/hooks/useNavigation";
 import type { SavedTrip } from "@/hooks/useNavigation";
 import { useWakeLock } from "@/hooks/useWakeLock";
@@ -141,6 +142,7 @@ export default function MapPage() {
   // radar de perigos: distância/direção em tempo real, aviso por som, voz e vibração a cada nível
   const watch = useHazardWatch({ ride, obstacles: filtered, lanes, soundOn });
   const { primary, dismiss } = watch;
+  useLaneNotice(ride.pos, lanes); // "você está na ciclofaixa..."
 
   // câmera acompanha o ciclista enquanto pedala/navega; arrastar o mapa solta a câmera (botão "recentralizar" volta)
   useEffect(() => {
