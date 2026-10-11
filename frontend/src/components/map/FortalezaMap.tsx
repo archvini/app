@@ -388,7 +388,7 @@ export default function FortalezaMap({
     });
     // No celular o zoom é por pinça/duplo toque — sem botões cobrindo o mapa. No computador, + / − e a bússola.
     if (!window.matchMedia("(pointer: coarse)").matches) {
-      map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "bottom-right");
+      map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
     }
 
     let fellBack = false;

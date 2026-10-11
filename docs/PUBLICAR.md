@@ -142,3 +142,6 @@ As ciclovias de exemplo do seed podem ficar duplicadas sobre as importadas; se q
   - *Conquista (subiu de nível, selo novo ou selo ao confirmar alerta):* escala rápida e brilhante, mais aguda.
   - *Voz da rota:* a ~100 m da próxima manobra, fala "Em 100 metros, vire à direita".
   - Todos obedecem ao botão de som do mapa. Para tirar algum que não ficar bom, é só remover a chamada correspondente (`playFinishSound`, `playRewardSound` em `useRide.ts`; o bloco "voz da rota" em `MapPage.tsx`).
+
+## 20. Botões do mapa na versão web
+- Os controles de zoom e bússola do mapa foram para o canto **superior direito** (só no computador), para não ficarem em cima dos botões do app (localizar, camadas, Reportar obstáculo). No celular eles ficam ocultos: o zoom é por pinça.

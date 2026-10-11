@@ -558,3 +558,10 @@
 .vdb-popup.maplibregl-popup-anchor-top .maplibregl-popup-tip {
   border-bottom-color: #334155;
 }
+
+/* zoom/bússola do mapa: no computador ficam no canto superior direito (embaixo ficam os botões do app); no celular o gesto de pinça basta */
+@media (max-width: 767px) {
+  .maplibregl-ctrl-top-right {
+    display: none;
+  }
+}
