@@ -142,3 +142,7 @@ tempo real com alerta de proximidade, cadastro/login e gamificação (XP, nívei
 
 ## Busca no topo do mapa
 - `components/map/MapSearchBar.tsx`: filtro local (shops, lanes, obstacles filtrados; sem acento/caixa) + `/geocode` com debounce 500 ms (≥3 letras, guarda de resposta atrasada por `seq`). `MapPage`: `onSearchPlace` define `tapPoint` + `tapName` (título do cartão e nome do destino) e foca zoom 17; `onSearchLane` foca o ponto médio. Reusa `onSelectShop`/`onSelectObstacle`.
+
+## Relatos de problemas do app
+- Backend `routers/bugs.py`: `POST /bugs` (login opcional; limite 5/h por `who` = user id ou `ip:`), `GET /bugs` e `GET /bugs/open-count` e `PATCH /bugs/{id}` (moderador). Coleção `bug_reports` {id, category, message, status novo|analisando|resolvido, who, user_id, user_name, page, user_agent, viewport, app_version, created_at}. Resolver notifica o autor (`bug_fixed`).
+- Frontend: `BugReportButton` (Navbar, todos) e aba "Bugs" em `AlertsInboxPage` (`BugQueue`). Teste: `backend/tests/test_bugs.py`.

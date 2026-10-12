@@ -11,6 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import BugReportButton from "@/components/layout/BugReportButton";
 import NotificationBell from "@/components/layout/NotificationBell";
 import Avatar from "@/components/profile/Avatar";
 import { useAuth } from "@/hooks/useAuth";
@@ -103,6 +104,7 @@ export default function Navbar() {
             >
               <FlagTriangleRight className="h-4 w-4" /> Reportar
             </Button>
+            <BugReportButton />
             {user && <NotificationBell />}
             {user ? (
               <DropdownMenu>
