@@ -150,3 +150,9 @@ As ciclovias de exemplo do seed podem ficar duplicadas sobre as importadas; se q
 - Barra de busca no topo do mapa. Ao digitar, aparecem na hora **locais** (borracharias, oficinas, Bicicletar), **ciclovias/ciclofaixas** e **alertas** já cadastrados; a partir de 3 letras também **endereços e lugares de Fortaleza** (usa o mesmo `/geocode` da navegação, com espera de 0,5 s para não sobrecarregar).
 - Escolher um endereço marca o ponto no mapa e abre o cartão com **Ir até aqui**, **Reportar aqui** e **Adicionar borracharia/oficina**; o título do cartão mostra o nome do lugar. Escolher um local ou alerta abre o cartão dele; uma ciclovia centraliza o mapa nela.
 - A barra some durante a navegação, no modo de marcar obstáculo e no editor de ciclovias. Só frontend: Redeploy do site.
+
+## 22. Relatar problema do app (botão do inseto)
+- Botão com ícone de inseto no topo (ao lado do sino), visível para **todos**, até sem login. Abre um formulário: tipo (travou, deu erro, problema na tela, sugestão, outro) + descrição. O app anexa sozinho a página, o aparelho (user agent) e o tamanho da tela, para ajudar a reproduzir. É separado do botão **Reportar**, que continua só para o mapa.
+- A equipe lê em **Caixa de alertas → aba Bugs**, com o contador de abertos, e marca **Analisando** ou **Resolvido**. Ao marcar Resolvido, quem estava logado recebe uma notificação de agradecimento no sino.
+- Limite de 5 relatos por hora por pessoa (ou por IP, se não logada), contra spam. Nova coleção `bug_reports` (criada sozinha). Backend mudou: **Redeploy da API** e do site.
+- Não tem anexo de print ainda; o testador pode mandar o print pelo grupo do beta.

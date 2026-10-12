@@ -31,6 +31,7 @@ from routers.routing import router as routing_router
 from routers.social import router as social_router
 from routers.shops import router as shops_router
 from routers.notifications import router as notifications_router
+from routers.bugs import router as bugs_router
 from lib.snap import snap_pending_lanes
 
 
@@ -125,6 +126,7 @@ api_router.include_router(moderation_router)
 api_router.include_router(social_router)
 api_router.include_router(shops_router)
 api_router.include_router(notifications_router)
+api_router.include_router(bugs_router)
 
 # Include the router in the main app
 app.include_router(api_router)

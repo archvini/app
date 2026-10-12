@@ -265,7 +265,7 @@ export interface Meetup {
 
 export interface NotificationItem {
   id: string;
-  kind: "follow" | "alert_ok" | "alert_no" | "shop_ok" | "shop_no" | "announcement";
+  kind: "follow" | "alert_ok" | "alert_no" | "shop_ok" | "shop_no" | "announcement" | "bug_fixed";
   title: string;
   body: string;
   link: string;
@@ -277,3 +277,25 @@ export interface NotificationFeed {
   unread: number;
   items: NotificationItem[];
 }
+
+export type BugCategory = "travou" | "erro" | "visual" | "sugestao" | "outro";
+export type BugStatus = "novo" | "analisando" | "resolvido";
+export interface BugItem {
+  id: string;
+  category: BugCategory;
+  message: string;
+  status: BugStatus;
+  user_name: string | null;
+  page: string;
+  user_agent: string;
+  viewport: string;
+  app_version: string;
+  created_at: string;
+}
+export const BUG_CATEGORIES: Record<BugCategory, string> = {
+  travou: "O app travou",
+  erro: "Deu erro",
+  visual: "Problema na tela",
+  sugestao: "Sugestão",
+  outro: "Outro",
+};

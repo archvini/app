@@ -62,6 +62,12 @@ INDEXES: dict[str, list[IndexModel]] = {
         IndexModel([("user_id", ASCENDING), ("created_at", DESCENDING)], name="user_created"),
         IndexModel([("created_at", ASCENDING)], name="ttl_60d", expireAfterSeconds=60 * 60 * 24 * 60),
     ],
+    # relatos de problemas do app (equipe lê na Caixa de alertas)
+    "bug_reports": [
+        IndexModel([("id", ASCENDING)], name="id", unique=True),
+        IndexModel([("status", ASCENDING), ("created_at", DESCENDING)], name="status_created"),
+        IndexModel([("who", ASCENDING), ("created_at", DESCENDING)], name="who_created"),
+    ],
     "announcements": [
         IndexModel([("id", ASCENDING)], name="id", unique=True),
         IndexModel([("created_at", DESCENDING)], name="created_desc"),

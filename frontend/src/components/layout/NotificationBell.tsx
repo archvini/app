@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Bell, CheckCheck, CircleCheck, CircleX, Megaphone, Store, Trash2, UserPlus } from "lucide-react";
+import { Bell, CheckCheck, CircleCheck, CircleX, Bug, Megaphone, Store, Trash2, UserPlus } from "lucide-react";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { apiDelete, apiGet, apiPost } from "@/lib/api";
@@ -17,6 +17,7 @@ const KIND_ICON: Record<NotificationItem["kind"], { Icon: typeof Bell; cls: stri
   shop_ok: { Icon: Store, cls: "bg-emerald-500/15 text-emerald-400" },
   shop_no: { Icon: Store, cls: "bg-rose-500/15 text-rose-400" },
   announcement: { Icon: Megaphone, cls: "bg-orange-500/15 text-orange-400" },
+  bug_fixed: { Icon: Bug, cls: "bg-emerald-500/15 text-emerald-400" },
 };
 
 /** Sino do topo: contador de não lidas (atualiza a cada 30 s) e lista das notificações recentes. */

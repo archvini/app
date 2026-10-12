@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Check, Inbox, MapPin, Pencil, Phone, ShieldAlert, Wrench, X } from "lucide-react";
+import { Bug, Check, Inbox, MapPin, Pencil, Phone, ShieldAlert, Wrench, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -15,18 +15,67 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
-import { apiDetail, apiGet, apiPost } from "@/lib/api";
+import { apiDetail, apiGet, apiPatch, apiPost } from "@/lib/api";
 import { SEVERITY_COLORS } from "@/lib/hazards";
-import { OBSTACLE_TYPES, SEVERITY_LABELS } from "@/lib/types";
+import { BUG_CATEGORIES, OBSTACLE_TYPES, SEVERITY_LABELS } from "@/lib/types";
 import { SHOP_META } from "@/lib/shops";
-import type { ModerationItem, ModerationSummary, Obstacle, ObstacleType, Severity, Shop } from "@/lib/types";
+import type { BugItem, BugStatus, ModerationItem, ModerationSummary, Obstacle, ObstacleType, Severity, Shop } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const TYPES = Object.keys(OBSTACLE_TYPES) as ObstacleType[];
 const SEVERITIES: Severity[] = ["baixa", "media", "alta"];
 const QUICK_REASONS = ["Alerta duplicado", "Local incorreto", "Não é um perigo para ciclistas", "Informação insuficiente"];
 
-type Tab = "pendente" | "recusado" | "locais";
+type Tab = "pendente" | "recusado" | "locais" | "bugs";
+
+/** Relatos de problemas do app enviados pelos usuários (botão do inseto no topo). */
+function BugQueue({ bugs }: { bugs: BugItem[] }) {
+  const queryClient = useQueryClient();
+  const setStatus = useMutation({
+    mutationFn: (v: { id: string; status: BugStatus }) => apiPatch(`/bugs/${v.id}`, { status: v.status }),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["bugs"] }),
+    onError: (err) => toast.error(apiDetail(err, "Não foi possível atualizar")),
+  });
+  if (bugs.length === 0) {
+    return (
+      <div className="mt-8 rounded-2xl border border-dashed border-slate-700 p-10 text-center" data-testid="bugs-empty">
+        <Bug className="mx-auto h-8 w-8 text-slate-500" />
+        <p className="mt-3 text-sm text-slate-400">Nenhum problema do app em aberto.</p>
+      </div>
+    );
+  }
+  return (
+    <ul className="mt-5 space-y-3" data-testid="bug-list">
+      {bugs.map((b) => (
+        <li key={b.id} className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="rounded-full bg-orange-500/15 px-2 py-0.5 font-semibold text-orange-300">{BUG_CATEGORIES[b.category]}</span>
+            <span className={cn("rounded-full px-2 py-0.5 font-semibold", b.status === "novo" ? "bg-sky-500/15 text-sky-300" : "bg-amber-500/15 text-amber-300")}>
+              {b.status === "novo" ? "Novo" : "Analisando"}
+            </span>
+            <span className="text-slate-500">
+              {b.user_name ?? "Sem login"} · {formatDistanceToNow(new Date(b.created_at), { addSuffix: true, locale: ptBR })}
+            </span>
+          </div>
+          <p className="mt-2 whitespace-pre-wrap text-sm text-slate-200">{b.message}</p>
+          <p className="mt-2 break-all text-[11px] text-slate-500">
+            {b.page} · tela {b.viewport} · {b.user_agent}
+          </p>
+          <div className="mt-3 flex gap-2">
+            {b.status === "novo" && (
+              <Button size="sm" variant="outline" onClick={() => setStatus.mutate({ id: b.id, status: "analisando" })}>
+                Analisando
+              </Button>
+            )}
+            <Button size="sm" onClick={() => setStatus.mutate({ id: b.id, status: "resolvido" })} data-testid="bug-resolve">
+              <Check className="h-4 w-4" /> Resolvido
+            </Button>
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 /** Locais (borracharias/oficinas) sugeridos por ciclistas, esperando a decisão da equipe. */
 function ShopQueue({ shops }: { shops: Shop[] }) {
@@ -272,6 +321,12 @@ export default function AlertsInboxPage() {
   const { data: user, isLoading } = useAuth();
   const [tab, setTab] = useState<Tab>("pendente");
   const isMod = !!user?.is_moderator;
+  const { data: bugs = [] } = useQuery({
+    queryKey: ["bugs"],
+    queryFn: () => apiGet<BugItem[]>("/bugs"),
+    enabled: isMod,
+    refetchInterval: 30000,
+  });
 
   const { data: summary } = useQuery({
     queryKey: ["moderation", "summary"],
@@ -282,7 +337,7 @@ export default function AlertsInboxPage() {
   const { data: items = [], isLoading: loadingItems } = useQuery({
     queryKey: ["moderation", "queue", tab],
     queryFn: () => apiGet<ModerationItem[]>(`/moderation/queue?status=${tab === "locais" ? "pendente" : tab}`),
-    enabled: isMod && tab !== "locais",
+    enabled: isMod && tab !== "locais" && tab !== "bugs",
     refetchInterval: 20000,
   });
   const { data: shopQueue = [] } = useQuery({
@@ -349,10 +404,15 @@ export default function AlertsInboxPage() {
           <TabsTrigger value="locais" data-testid="inbox-tab-locais">
             Locais ({shopQueue.length})
           </TabsTrigger>
+          <TabsTrigger value="bugs" data-testid="inbox-tab-bugs">
+            Bugs ({bugs.length})
+          </TabsTrigger>
         </TabsList>
       </Tabs>
 
-      {tab === "locais" ? (
+      {tab === "bugs" ? (
+        <BugQueue bugs={bugs} />
+      ) : tab === "locais" ? (
         <ShopQueue shops={shopQueue} />
       ) : loadingItems ? (
         <div className="mt-5 h-56 animate-pulse rounded-2xl bg-slate-800/60" />
