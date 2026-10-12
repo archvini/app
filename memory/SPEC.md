@@ -139,3 +139,6 @@ tempo real com alerta de proximidade, cadastro/login e gamificação (XP, nívei
 ## Som de chegada
 - `playArrivalSound()` em `hooks/useRide.ts` (osciladores triangle, dó-mi-sol-dó). `MapPage` dispara quando `phase` vira `arrived`: vibração + (se `soundOn`) jingle e voz pt-BR. Deps só `[phase]` para não repetir ao mexer no botão de som.
 - Sons extras (`hooks/useRide.ts`): objeto `sound` ({on, arrivedAt}) espelha o botão de som; `playFinishSound` (após registrar pedal, exceto ≤8 s depois da chegada), `playRewardSound` (nível/selo). `MapPage`: voz "Em N metros, <manobra>" uma vez por passo a ≤100 m.
+
+## Busca no topo do mapa
+- `components/map/MapSearchBar.tsx`: filtro local (shops, lanes, obstacles filtrados; sem acento/caixa) + `/geocode` com debounce 500 ms (≥3 letras, guarda de resposta atrasada por `seq`). `MapPage`: `onSearchPlace` define `tapPoint` + `tapName` (título do cartão e nome do destino) e foca zoom 17; `onSearchLane` foca o ponto médio. Reusa `onSelectShop`/`onSelectObstacle`.
