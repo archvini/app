@@ -3,20 +3,25 @@
 import os
 import secrets
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
 from lib.db import db
+from lib.ratelimit import client_ip, record, too_many
 from lib.routing import polyline_length_m
 from lib.snap import looks_sane, nearest_point_on_polyline, snap_waypoints
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
-def _check(token: str) -> None:
+async def _check(token: str, request: Request) -> None:
     expected = os.environ.get("SEED_TOKEN", "")
     if not expected:  # sem a variável, a rota nem "existe"
         raise HTTPException(status_code=404, detail="Not Found")
+    key = f"admin-token:{client_ip(request)}"
+    if await too_many(key, 10, 3600):  # chutar o token: 10 erros por hora por IP
+        raise HTTPException(status_code=429, detail="Muitas tentativas")
     if not secrets.compare_digest(token.encode(), expected.encode()):
+        await record(key)
         raise HTTPException(status_code=403, detail="Token inválido")
 
 
@@ -30,23 +35,34 @@ async def _counts() -> dict:
 
 
 @router.get("/seed")
-async def run_seed(token: str):
+async def run_seed(request: Request, token: str):
     """Cria ciclovias, alertas de exemplo e contas demo (idempotente — pode abrir mais de uma vez)."""
-    _check(token)
+    await _check(token, request)
     from seed import main  # import tardio: só carrega os dados quando a rota é usada
 
     await main(snap=False)  # ajustar às ruas chama um serviço externo e pode demorar: fica em /admin/snap
     return {"ok": True, **await _counts()}
 
 
+@router.get("/remove-demo")
+async def remove_demo_accounts(request: Request, token: str):
+    """Apaga as contas de demonstração (id "seed-…", senha pública) e as sessões delas. Os alertas de exemplo continuam no mapa."""
+    await _check(token, request)
+    ids = await db.users.distinct("id", {"id": {"$regex": "^seed-"}})
+    await db.sessions.delete_many({"user_id": {"$in": ids}})
+    await db.notifications.delete_many({"user_id": {"$in": ids}})
+    res = await db.users.delete_many({"id": {"$in": ids}})
+    return {"ok": True, "contas_removidas": res.deleted_count}
+
+
 @router.get("/snap")
-async def run_snap(token: str, force: int = 0):
+async def run_snap(request: Request, token: str, force: int = 0):
     """Cola as ciclovias nas ruas reais (roteador de bike). Idempotente; repita até `pendentes` chegar a 0.
 
     Para cada ciclovia que não colou, diz o motivo. `force=1` aceita o resultado do roteador mesmo quando ele
     parece grande demais (só use se o motivo for `resultado_suspeito` e o desenho no mapa ficar bom).
     """
-    _check(token)
+    await _check(token, request)
     detalhes: list[dict] = []
     done = 0
     async for lane in db.bikelanes.find({"snapped": {"$ne": True}}):
@@ -124,12 +140,12 @@ def _shop_from_osm(el: dict) -> dict | None:
 
 
 @router.get("/import-shops")
-async def import_shops(token: str):
+async def import_shops(request: Request, token: str):
     """Importa do OpenStreetMap as oficinas de bike, borracharias e pontos de autorreparo de Fortaleza.
 
     Idempotente: repetir atualiza os dados vindos do mapa e mantém avaliações e locais criados pela comunidade.
     """
-    _check(token)
+    await _check(token, request)
     import httpx
     from datetime import datetime, timezone
 
@@ -256,12 +272,12 @@ def _lane_from_osm(el: dict) -> dict | None:
 
 
 @router.get("/import-lanes")
-async def import_lanes(token: str):
+async def import_lanes(request: Request, token: str):
     """Importa do OpenStreetMap as ciclovias e ciclofaixas de Fortaleza (já seguindo as ruas).
 
     Idempotente: repetir atualiza as importadas. Não mexe nas ciclovias do seed nem nas desenhadas pela equipe.
     """
-    _check(token)
+    await _check(token, request)
     import httpx
 
     elements: list[dict] | None = None

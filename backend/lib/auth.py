@@ -1,6 +1,8 @@
 """Cookie sessions + password hashing. Sessions live in the `sessions` collection."""
 
+import hashlib
 import os
+import secrets
 import uuid
 from datetime import datetime, timezone
 
@@ -17,7 +19,10 @@ TOKEN_HEADER = "X-Session-Token"
 COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "1" if os.environ.get("VERCEL") else "0") == "1"
 
 # pbkdf2_sha256: pure-python, no native-binding surprises in the pod.
-pwd = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
+ROUNDS = 600_000
+# 600.000 voltas (recomendação atual da OWASP). Senhas antigas (menos voltas) são refeitas sozinhas no próximo login.
+pwd = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto", pbkdf2_sha256__default_rounds=ROUNDS)
+_DUMMY_HASH = pwd.hash(secrets.token_hex(8))  # gasta o mesmo tempo quando o e-mail não existe (não revela quem tem conta)
 
 
 def hash_password(raw: str) -> str:
@@ -26,6 +31,24 @@ def hash_password(raw: str) -> str:
 
 def verify_password(raw: str, hashed: str) -> bool:
     return pwd.verify(raw, hashed)
+
+
+def pwd_needs_update(hashed: str) -> bool:
+    """Hash no formato `$pbkdf2-sha256$<voltas>$...`: True se foi feito com menos voltas que o atual."""
+    try:
+        return int(hashed.split("$")[2]) < ROUNDS
+    except (IndexError, ValueError):
+        return False
+
+
+def burn_password_check(raw: str) -> None:
+    """Login com e-mail inexistente: faz a mesma conta cara, para o tempo de resposta não entregar se a conta existe."""
+    pwd.verify(raw, _DUMMY_HASH)
+
+
+def session_key(raw_token: str) -> str:
+    """No banco guardamos só o hash do token: se o banco vazar, as sessões não podem ser usadas."""
+    return hashlib.sha256(raw_token.encode()).hexdigest()
 
 
 def token_from(request: Request) -> str | None:
@@ -37,9 +60,9 @@ def token_from(request: Request) -> str | None:
 
 
 async def start_session(response: Response, user_id: str) -> None:
-    token = str(uuid.uuid4())
+    token = secrets.token_urlsafe(32)
     await db.sessions.insert_one(
-        {"token": token, "user_id": user_id, "created_at": datetime.now(timezone.utc)}
+        {"token": session_key(token), "user_id": user_id, "created_at": datetime.now(timezone.utc)}
     )
     response.set_cookie(
         COOKIE_NAME,
@@ -56,7 +79,7 @@ async def start_session(response: Response, user_id: str) -> None:
 async def end_session(request: Request, response: Response) -> None:
     token = token_from(request)
     if token:
-        await db.sessions.delete_one({"token": token})
+        await db.sessions.delete_one({"token": session_key(token)})
     response.delete_cookie(COOKIE_NAME, path="/")
 
 
@@ -64,7 +87,7 @@ async def get_current_user(request: Request) -> dict | None:
     token = token_from(request)
     if not token:
         return None
-    session = await db.sessions.find_one({"token": token})
+    session = await db.sessions.find_one({"token": session_key(token)})
     if not session:
         return None
     return await db.users.find_one({"id": session["user_id"]})

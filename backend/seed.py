@@ -7,6 +7,8 @@ Idempotente — upsert por id/e-mail, alertas de exemplo só quando a coleção 
 import asyncio
 from datetime import datetime, timezone
 
+import secrets
+
 from lib.auth import hash_password
 from lib.db import db, ensure_indexes
 from lib.game import apply_badges
@@ -152,13 +154,13 @@ async def main(snap: bool = True) -> None:
         # senha e data só na criação: rodar o seed de novo NÃO devolve a conta dev à senha pública
         await db.users.update_one(
             {"email": u["email"]},
-            {"$set": doc, "$setOnInsert": {"password_hash": hash_password("senha123"), "created_at": now}},
+            {"$set": doc, "$setOnInsert": {"password_hash": hash_password(secrets.token_urlsafe(24)), "created_at": now}},
             upsert=True,
         )
         fresh = await db.users.find_one({"email": u["email"]})
         users_by_email[u["email"]] = fresh
         fresh, _ = await apply_badges(fresh)
-        print(f"user: {u['email']} (senha: senha123)")
+        print(f"user: {u['email']} (conta demo: login bloqueado em produção; ALLOW_DEMO_LOGIN=1 só para testes locais)")
 
     # 3) Alertas de exemplo — só se a coleção estiver vazia
     if await db.obstacles.count_documents({}) == 0:

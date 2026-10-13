@@ -10,7 +10,7 @@ O `vercel.json` da raiz já declara os dois serviços (`backend` FastAPI e `fron
 1. Settings → Environment Variables, **Environments = Production (e Preview)**:
    - `MONGO_URL` = string do Atlas
    - `DB_NAME` = `vaidebike`
-   - (opcional) `CORS_ORIGINS` = `https://seu-dominio.vercel.app` — sem isso a API aceita qualquer origem.
+   - (recomendado) `CORS_ORIGINS` = `https://seu-dominio.vercel.app`. Sem isso a API só aceita chamadas de outra origem em `localhost` (o site em si funciona, pois fala com a API pelo mesmo endereço).
 2. **Redeploy** (variável nova só vale em deploy novo).
 3. Teste `https://SEU-DOMINIO/api/health`:
    - `{"ok":true,"db":"up"}` → tudo certo.
@@ -45,7 +45,7 @@ Obs.: no iOS a vibração (`navigator.vibrate`) não existe; som, voz e alerta v
 2. Abra `https://SEU-DOMINIO/api/admin/seed?token=SUA_FRASE` → cria ciclovias, alertas de exemplo e contas demo.
 3. Abra `https://SEU-DOMINIO/api/admin/snap?token=SUA_FRASE` (repita se `pendentes` ≠ 0) → ajusta as ciclovias às ruas.
 4. Depois **apague a variável `SEED_TOKEN`**: sem ela, as duas rotas deixam de existir.
-As contas demo (`demo@vaidebike.app`, `maria@…`, `joao@…`; senha `senha123`) não aparecem na tela de login, no placar nem na contagem de ciclistas, mas ainda existem e a senha é conhecida: apague-as do Atlas (coleção `users`, ids que começam com `seed-`) antes de abrir o app ao público real. Os alertas de exemplo do mapa foram criados por elas.
+As contas demo (`demo@vaidebike.app`, `maria@…`, `joao@…`) agora **não conseguem entrar** (login bloqueado, a menos que `ALLOW_DEMO_LOGIN=1`) e o seed passou a gerar senha aleatória. Mesmo assim, apague-as: abra `https://SUA-API/api/admin/remove-demo?token=SEU_SEED_TOKEN` uma vez, antes de abrir o app ao público real. Os alertas de exemplo do mapa foram criados por elas.
 
 ## 6. Dois projetos na Vercel (API e site separados)
 Se o projeto da API foi criado com Root Directory = `backend`, ele só serve `/api`. O site é um **segundo projeto**:

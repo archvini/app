@@ -146,3 +146,6 @@ tempo real com alerta de proximidade, cadastro/login e gamificação (XP, nívei
 ## Relatos de problemas do app
 - Backend `routers/bugs.py`: `POST /bugs` (login opcional; limite 5/h por `who` = user id ou `ip:`), `GET /bugs` e `GET /bugs/open-count` e `PATCH /bugs/{id}` (moderador). Coleção `bug_reports` {id, category, message, status novo|analisando|resolvido, who, user_id, user_name, page, user_agent, viewport, app_version, created_at}. Resolver notifica o autor (`bug_fixed`).
 - Frontend: `BugReportButton` (Navbar, todos) e aba "Bugs" em `AlertsInboxPage` (`BugQueue`). Teste: `backend/tests/test_bugs.py`.
+
+## Segurança (rodada de endurecimento)
+- Ver `docs/SEGURANCA.md`. Sessões: `sessions.token` guarda `sha256(token)` (cliente guarda o token puro; sessões antigas invalidadas). Rate limit em Mongo (`lib/ratelimit.py`, coleção `rate_hits` com TTL 1 h): login (erros), register, forgot, reset, geocode, route, admin token. PBKDF2 600k (`ROUNDS`), rehash no login. Login de contas `seed-` bloqueado salvo `ALLOW_DEMO_LOGIN=1`; `/admin/remove-demo`. CORS sem `*`. Middleware de cabeçalhos; `/api/status` removido; `/health` sem detalhes. Senha mínima 8. Testes: `backend/tests/test_security.py`.

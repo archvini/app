@@ -11,6 +11,7 @@ from lib.auth import get_current_user, require_moderator
 from lib.dates import utc_aware
 from lib.db import db
 from lib.notify import notify
+from lib.ratelimit import client_ip
 
 router = APIRouter(prefix="/bugs", tags=["bugs"])
 
@@ -50,8 +51,7 @@ class BugStatus(BaseModel):
 def _who(request: Request, user: dict | None) -> str:
     if user:
         return user["id"]
-    fwd = request.headers.get("x-forwarded-for", "")
-    return "ip:" + (fwd.split(",")[0].strip() or (request.client.host if request.client else "?"))
+    return "ip:" + client_ip(request)
 
 
 @router.post("")

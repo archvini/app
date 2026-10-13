@@ -30,7 +30,18 @@ next-env.d.ts
 dist/
 dist
 
-# Environment files (comprehensive coverage)
+# Environment files (comprehensive coverage) — NUNCA enviar senhas/chaves ao GitHub
+.env
+.env.*
+*.env
+!.env.example
+backend/.env
+frontend/.env*
+*.pem
+*.key
+*.p12
+*.keystore
+*.jks
 
 *token.json*
 *credentials.json*

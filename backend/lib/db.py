@@ -62,6 +62,11 @@ INDEXES: dict[str, list[IndexModel]] = {
         IndexModel([("user_id", ASCENDING), ("created_at", DESCENDING)], name="user_created"),
         IndexModel([("created_at", ASCENDING)], name="ttl_60d", expireAfterSeconds=60 * 60 * 24 * 60),
     ],
+    # tentativas de login/cadastro/busca por IP (limite contra força bruta e abuso); somem sozinhas em 1 hora
+    "rate_hits": [
+        IndexModel([("key", ASCENDING), ("at", DESCENDING)], name="key_at"),
+        IndexModel([("at", ASCENDING)], name="ttl_1h", expireAfterSeconds=3600),
+    ],
     # relatos de problemas do app (equipe lê na Caixa de alertas)
     "bug_reports": [
         IndexModel([("id", ASCENDING)], name="id", unique=True),
