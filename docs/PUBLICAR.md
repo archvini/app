@@ -146,10 +146,9 @@ As ciclovias de exemplo do seed podem ficar duplicadas sobre as importadas; se q
 ## 20. Botões do mapa na versão web
 - Os controles de zoom e bússola do mapa foram para o canto **superior direito** (só no computador), para não ficarem em cima dos botões do app (localizar, camadas, Reportar obstáculo). No celular eles ficam ocultos: o zoom é por pinça.
 
-## 21. Busca no topo do mapa (lupa)
-- Barra de busca no topo do mapa. Ao digitar, aparecem na hora **locais** (borracharias, oficinas, Bicicletar), **ciclovias/ciclofaixas** e **alertas** já cadastrados; a partir de 3 letras também **endereços e lugares de Fortaleza** (usa o mesmo `/geocode` da navegação, com espera de 0,5 s para não sobrecarregar).
-- Escolher um endereço marca o ponto no mapa e abre o cartão com **Ir até aqui**, **Reportar aqui** e **Adicionar borracharia/oficina**; o título do cartão mostra o nome do lugar. Escolher um local ou alerta abre o cartão dele; uma ciclovia centraliza o mapa nela.
-- A barra some durante a navegação, no modo de marcar obstáculo e no editor de ciclovias. Só frontend: Redeploy do site.
+## 21. Busca (só a barra de baixo)
+- O mapa tem uma única barra de busca: a de **baixo** (painel inferior), que procura o destino e traça a rota. A barra de cima, que existiu por um tempo, foi removida para não duplicar.
+- Para marcar um ponto e reportar ou adicionar um local, toque direto no mapa.
 
 ## 22. Relatar problema do app (botão do inseto)
 - Botão com ícone de inseto no topo (ao lado do sino), visível para **todos**, até sem login. Abre um formulário: tipo (travou, deu erro, problema na tela, sugestão, outro) + descrição. O app anexa sozinho a página, o aparelho (user agent) e o tamanho da tela, para ajudar a reproduzir. É separado do botão **Reportar**, que continua só para o mapa.
