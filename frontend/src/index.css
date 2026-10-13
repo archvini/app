@@ -51,7 +51,7 @@
     --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* VaiDeBike Fortaleza — dark obsidian tático (dark-by-default: os mesmos tokens em :root e .dark) */
+
 :root {
     --background: #090D16;
     --foreground: #F8FAFC;
