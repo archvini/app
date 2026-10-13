@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import {
   ArrowUp,
@@ -7,13 +7,16 @@ import {
   Bike,
   Check,
   Clock,
+  Crosshair,
   CornerUpLeft,
   CornerUpRight,
   Flag,
+  FlagTriangleRight,
   MapPin,
   Navigation,
   Route as RouteIcon,
   Search,
+  Wrench,
   TriangleAlert,
   X,
   Zap,
@@ -24,8 +27,9 @@ import { Input } from "@/components/ui/input";
 import { formatDistance, formatDuration } from "@/hooks/useNavigation";
 import type { NavigationState } from "@/hooks/useNavigation";
 import type { RideState } from "@/hooks/useRide";
-import { formatKm } from "@/lib/types";
-import type { BikeLane, RouteStep } from "@/lib/types";
+import { SHOP_META } from "@/lib/shops";
+import { OBSTACLE_TYPES, formatKm } from "@/lib/types";
+import type { BikeLane, Obstacle, Place, RouteStep, Shop } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 /** Horário previsto de chegada (HH:mm) a partir de agora + `seconds`. */
@@ -90,11 +94,54 @@ interface PanelProps {
   lanes: BikeLane[];
   /** posição do painel no encaixe (0 = recolhido) — mostra mais conteúdo quando expandido */
   sheetIndex: number;
+  /** o que já existe no mapa, para a busca geral achar pelo nome */
+  shops: Shop[];
+  obstacles: Obstacle[];
+  onPickShop: (s: Shop) => void;
+  onPickObstacle: (o: Obstacle) => void;
+  onPickLane: (l: BikeLane) => void;
+  /** marca o lugar no mapa (abre o cartão: ir até lá, reportar aqui, adicionar local) */
+  onPinPlace: (p: Place) => void;
+  /** chamado ao digitar, para o painel abrir e mostrar os resultados */
+  onSearchTyping: () => void;
 }
 
+const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
 /** Conteúdo do painel inferior: busca de destino → prévia da rota → chegada. Durante a viagem quem aparece é a bolha (NavBubble). */
-export default function NavigationPanel({ nav, ride, lanes, sheetIndex }: PanelProps) {
+export default function NavigationPanel({
+  nav,
+  ride,
+  lanes,
+  sheetIndex,
+  shops,
+  obstacles,
+  onPickShop,
+  onPickObstacle,
+  onPickLane,
+  onPinPlace,
+  onSearchTyping,
+}: PanelProps) {
   const [query, setQuery] = useState("");
+
+  // busca geral: ruas e lugares (servidor) aparecem sozinhos depois de meio segundo sem digitar
+  const { search } = nav;
+  useEffect(() => {
+    if (query.trim().length < 3) return;
+    const t = setTimeout(() => void search(query, true), 500);
+    return () => clearTimeout(t);
+  }, [query, search]);
+
+  // o que já existe no mapa com esse nome: locais, ciclovias e alertas (na hora, sem rede)
+  const local = useMemo(() => {
+    const n = norm(query.trim());
+    if (n.length < 2) return { shops: [], lanes: [], alerts: [] };
+    return {
+      shops: shops.filter((x) => norm(`${x.name} ${SHOP_META[x.kind].label}`).includes(n)).slice(0, 3),
+      lanes: lanes.filter((l) => norm(`${l.name} ${l.kind}`).includes(n)).slice(0, 3),
+      alerts: obstacles.filter((o) => norm(`${OBSTACLE_TYPES[o.type].label} ${o.description}`).includes(n)).slice(0, 3),
+    };
+  }, [query, shops, lanes, obstacles]);
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -191,8 +238,11 @@ export default function NavigationPanel({ nav, ride, lanes, sheetIndex }: PanelP
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
           <Input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Para onde vamos pedalar?"
+            onChange={(e) => {
+              setQuery(e.target.value);
+              if (e.target.value.trim().length >= 2) onSearchTyping();
+            }}
+            placeholder="Buscar rua, avenida, lugar, borracharia…"
             className="h-10 pl-8"
             data-testid="nav-search-input"
             enterKeyHint="search"
@@ -203,14 +253,28 @@ export default function NavigationPanel({ nav, ride, lanes, sheetIndex }: PanelP
         </Button>
       </form>
 
+      {(local.shops.length > 0 || local.lanes.length > 0 || local.alerts.length > 0) && (
+        <ul className="space-y-1" data-testid="nav-local-results">
+          {local.shops.map((x) => (
+            <ResultRow key={x.id} icon={<Wrench className="h-4 w-4" />} tone="bg-sky-500/15 text-sky-300" title={x.name} sub={SHOP_META[x.kind].label} onClick={() => onPickShop(x)} />
+          ))}
+          {local.lanes.map((l) => (
+            <ResultRow key={l.id} icon={<RouteIcon className="h-4 w-4" />} tone="bg-emerald-500/15 text-emerald-300" title={l.name} sub={l.kind === "ciclovia" ? "Ciclovia" : "Ciclofaixa"} onClick={() => onPickLane(l)} />
+          ))}
+          {local.alerts.map((o) => (
+            <ResultRow key={o.id} icon={<FlagTriangleRight className="h-4 w-4" />} tone="bg-orange-500/15 text-orange-300" title={OBSTACLE_TYPES[o.type].label} sub={o.description || "Alerta no mapa"} onClick={() => onPickObstacle(o)} />
+          ))}
+        </ul>
+      )}
+
       {nav.places.length > 0 && (
         <ul className="space-y-1" data-testid="nav-results">
           {nav.places.map((p) => (
-            <li key={`${p.lat}-${p.lng}`}>
+            <li key={`${p.lat}-${p.lng}`} className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => nav.chooseDestination({ lat: p.lat, lng: p.lng, name: p.name || p.label })}
-                className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-slate-800"
+                className="flex min-w-0 flex-1 items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-slate-800"
               >
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-800 text-slate-300">
                   <MapPin className="h-4 w-4" />
@@ -219,6 +283,15 @@ export default function NavigationPanel({ nav, ride, lanes, sheetIndex }: PanelP
                   <span className="block truncate text-sm font-medium text-white">{p.name || p.label}</span>
                   <span className="block truncate text-xs text-slate-500">{p.label}</span>
                 </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onPinPlace(p)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 hover:bg-slate-800 hover:text-white"
+                aria-label="Ver no mapa (reportar ou adicionar local aqui)"
+                title="Ver no mapa: reportar ou adicionar local aqui"
+              >
+                <Crosshair className="h-4 w-4" />
               </button>
             </li>
           ))}
@@ -288,5 +361,19 @@ export default function NavigationPanel({ nav, ride, lanes, sheetIndex }: PanelP
         </>
       )}
     </div>
+  );
+}
+
+function ResultRow({ icon, tone, title, sub, onClick }: { icon: React.ReactNode; tone: string; title: string; sub: string; onClick: () => void }) {
+  return (
+    <li>
+      <button type="button" onClick={onClick} className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-slate-800">
+        <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full", tone)}>{icon}</span>
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-medium text-white">{title}</span>
+          <span className="block truncate text-xs text-slate-500">{sub}</span>
+        </span>
+      </button>
+    </li>
   );
 }

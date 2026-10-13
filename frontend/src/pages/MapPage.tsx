@@ -35,7 +35,7 @@ import type { NavPhase } from "@/hooks/useNavigation";
 import { playArrivalSound, playRewardSound, sound, useRide } from "@/hooks/useRide";
 import { apiDelete, apiDetail, apiGet, apiPost } from "@/lib/api";
 import { OBSTACLE_TYPES, SEVERITY_LABELS } from "@/lib/types";
-import type { BikeLane, Obstacle, ObstacleType, ReportResult, Shop } from "@/lib/types";
+import type { BikeLane, Obstacle, ObstacleType, Place, ReportResult, Shop } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const ALL_TYPES = Object.keys(OBSTACLE_TYPES) as ObstacleType[];
@@ -91,6 +91,7 @@ export default function MapPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selected, setSelected] = useState<Obstacle | null>(null);
   const [tapPoint, setTapPoint] = useState<{ lat: number; lng: number } | null>(null);
+  const [tapName, setTapName] = useState<string | null>(null); // nome do lugar vindo da busca (null = toque no mapa)
   const [focus, setFocus] = useState<FocusRequest | null>(null);
   const [follow, setFollow] = useState(false);
   const [soundOn, setSoundOn] = useState(true);
@@ -254,14 +255,35 @@ export default function MapPage() {
       setSelected(null);
       setSelectedShop(null);
       setFollow(false);
+      setTapName(null);
       setTapPoint({ lat, lng });
     },
     [phase, editorMode],
   );
 
+  // busca geral: o painel recolhe e o mapa mostra o resultado escolhido
+  const onSearchPlace = useCallback((p: Place) => {
+    setSelected(null);
+    setSelectedShop(null);
+    setFollow(false);
+    setTapName(p.name || p.label);
+    setTapPoint({ lat: p.lat, lng: p.lng });
+    setFocus({ lat: p.lat, lng: p.lng, zoom: 17 });
+    setSheetIndex(0);
+  }, []);
+
+  const onSearchLane = useCallback((l: BikeLane) => {
+    const mid = l.coordinates[Math.floor(l.coordinates.length / 2)];
+    if (!mid) return;
+    setTapPoint(null);
+    setFollow(false);
+    setFocus({ lat: mid[0], lng: mid[1], zoom: 15 });
+    setSheetIndex(0);
+  }, []);
+
   const goToTapPoint = () => {
     if (!tapPoint) return;
-    chooseDestination({ ...tapPoint, name: "Ponto escolhido no mapa" });
+    chooseDestination({ ...tapPoint, name: tapName ?? "Ponto escolhido no mapa" });
     setTapPoint(null);
   };
 
@@ -577,7 +599,25 @@ export default function MapPage() {
           onInsetChange={setInset}
           testId="nav-sheet"
         >
-          <NavigationPanel nav={nav} ride={ride} lanes={lanes} sheetIndex={sheetIndex} />
+          <NavigationPanel
+            nav={nav}
+            ride={ride}
+            lanes={lanes}
+            sheetIndex={sheetIndex}
+            shops={shops}
+            obstacles={filtered}
+            onPickShop={(s) => {
+              onSelectShop(s);
+              setSheetIndex(0);
+            }}
+            onPickObstacle={(o) => {
+              onSelectObstacle(o);
+              setSheetIndex(0);
+            }}
+            onPickLane={onSearchLane}
+            onPinPlace={onSearchPlace}
+            onSearchTyping={() => setSheetIndex((i) => Math.max(i, 1))}
+          />
         </BottomSheet>
       )}
 
@@ -603,7 +643,7 @@ export default function MapPage() {
           data-testid="map-tap-card"
         >
           <CardHeader className="pb-2">
-            <CardTitle className="font-heading text-sm">Ponto no mapa</CardTitle>
+            <CardTitle className="font-heading text-sm">{tapName ?? "Ponto no mapa"}</CardTitle>
             <CardDescription className="text-xs">O que você quer fazer aqui?</CardDescription>
             <CardAction>
               <Button variant="ghost" size="icon-xs" onClick={() => setTapPoint(null)} aria-label="Fechar" data-testid="map-tap-close">
