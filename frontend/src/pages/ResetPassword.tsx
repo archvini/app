@@ -43,7 +43,7 @@ export default function ResetPassword() {
     <div className="flex min-h-[calc(100svh-3.5rem)] items-center justify-center px-4 py-16" data-testid="reset-page">
       <div className="w-full max-w-sm">
         <h1 className="font-heading text-3xl font-black tracking-tight text-white">Nova senha</h1>
-        <p className="mt-1 text-sm text-slate-400">Escolha uma senha com pelo menos 6 caracteres.</p>
+        <p className="mt-1 text-sm text-slate-400">Escolha uma senha com pelo menos 8 caracteres.</p>
         <form
           className="mt-8 space-y-4"
           onSubmit={(e) => {
@@ -55,7 +55,7 @@ export default function ResetPassword() {
             <Label htmlFor="reset-pass" className="text-xs font-semibold uppercase tracking-wider text-slate-400">
               Nova senha
             </Label>
-            <Input id="reset-pass" type="password" required minLength={6} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <Input id="reset-pass" type="password" required minLength={8} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="reset-confirm" className="text-xs font-semibold uppercase tracking-wider text-slate-400">
@@ -64,7 +64,7 @@ export default function ResetPassword() {
             <Input id="reset-confirm" type="password" required autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
             {mismatch && <p className="text-xs text-red-400">As senhas não são iguais.</p>}
           </div>
-          <Button type="submit" className="w-full" size="lg" disabled={mutation.isPending || mismatch || password.length < 6}>
+          <Button type="submit" className="w-full" size="lg" disabled={mutation.isPending || mismatch || password.length < 8}>
             {mutation.isPending ? "Salvando…" : "Salvar nova senha"}
           </Button>
         </form>

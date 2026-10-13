@@ -32,7 +32,7 @@ class User(BaseModel):
 class RegisterRequest(BaseModel):
     name: str = Field(min_length=2, max_length=60)
     email: EmailStr
-    password: str = Field(min_length=6, max_length=100)
+    password: str = Field(min_length=8, max_length=100)
     bike_type: str = "urbana"
 
 
@@ -61,7 +61,7 @@ class ProfileUpdate(BaseModel):
 
 class PasswordChange(BaseModel):
     current_password: str
-    new_password: str = Field(min_length=6, max_length=100)
+    new_password: str = Field(min_length=8, max_length=100)
 
 
 class AccountDelete(BaseModel):
@@ -78,7 +78,7 @@ class ForgotPassword(BaseModel):
 
 class ResetPassword(BaseModel):
     token: str = Field(min_length=20, max_length=200)
-    new_password: str = Field(min_length=6, max_length=100)
+    new_password: str = Field(min_length=8, max_length=100)
 
 
 class EmailChange(BaseModel):

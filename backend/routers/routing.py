@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Request
 from pydantic import BaseModel
 
+from lib.ratelimit import client_ip, hit
 from lib.routing import bike_route, geocode, haversine_m, polyline_length_m
 
 router = APIRouter(tags=["routing"])
@@ -35,11 +36,13 @@ class Place(BaseModel):
 
 @router.get("/route", response_model=RouteResult)
 async def get_route(
+    request: Request,
     from_lat: float = Query(ge=-90, le=90),
     from_lng: float = Query(ge=-180, le=180),
     to_lat: float = Query(ge=-90, le=90),
     to_lng: float = Query(ge=-180, le=180),
 ):
+    await hit(f"route:{client_ip(request)}", 60, 60)  # protege o roteador gratuito que usamos contra abuso
     route = await bike_route([(from_lat, from_lng), (to_lat, to_lng)])
     if route:
         return RouteResult(**route, source="bike")
@@ -59,5 +62,6 @@ async def get_route(
 
 
 @router.get("/geocode", response_model=list[Place])
-async def search_places(q: str = Query(min_length=3, max_length=120)):
+async def search_places(request: Request, q: str = Query(min_length=3, max_length=120)):
+    await hit(f"geocode:{client_ip(request)}", 40, 60)  # idem: a busca de endereços é um serviço gratuito de terceiros
     return [Place(**p) for p in await geocode(q)]

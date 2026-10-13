@@ -8,14 +8,18 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from lib.auth import (
+    burn_password_check,
+    session_key,
     token_from,
     end_session,
     get_current_user,
     hash_password,
+    pwd_needs_update,
     start_session,
     verify_password,
 )
 from lib.db import db
+from lib.ratelimit import client_ip, hit, record, too_many
 from lib.game import apply_badges, level_for_xp, user_from_doc
 from lib.mailer import mail_enabled, reset_email, send_mail
 from models.user import AccountDelete, Deactivate, EmailChange, ForgotPassword, ResetPassword, LoginRequest, OnboardingUpdate, PasswordChange, ProfileUpdate, RegisterRequest, User
@@ -44,7 +48,8 @@ def _app_url() -> str:
 
 
 @router.post("/register", response_model=User)
-async def register(req: RegisterRequest, response: Response):
+async def register(req: RegisterRequest, request: Request, response: Response):
+    await hit(f"register:{client_ip(request)}", 10, 3600, "Muitos cadastros deste aparelho. Tente de novo mais tarde.")
     email = req.email.lower()
     if await db.users.find_one({"email": email}):
         raise HTTPException(status_code=400, detail="Este e-mail já está cadastrado")
@@ -74,10 +79,26 @@ async def register(req: RegisterRequest, response: Response):
 
 
 @router.post("/login", response_model=User)
-async def login(req: LoginRequest, response: Response):
-    user = await db.users.find_one({"email": req.email.lower()})
-    if not user or not verify_password(req.password, user["password_hash"]):
+async def login(req: LoginRequest, request: Request, response: Response):
+    email = req.email.lower()
+    ip_key, mail_key = f"login-ip:{client_ip(request)}", f"login-mail:{email}"
+    # só as tentativas ERRADAS contam: 20 por IP e 8 por conta a cada 15 minutos (trava força bruta e troca de senhas vazadas)
+    if await too_many(ip_key, 20, 900) or await too_many(mail_key, 8, 900):
+        raise HTTPException(status_code=429, detail="Muitas tentativas de entrada. Aguarde 15 minutos ou use \"Esqueci a senha\".")
+    user = await db.users.find_one({"email": email})
+    # contas de demonstração têm senha pública: só entram em desenvolvimento (ALLOW_DEMO_LOGIN=1)
+    demo_blocked = bool(user) and str(user.get("id", "")).startswith("seed-") and os.environ.get("ALLOW_DEMO_LOGIN") != "1"
+    if not user or demo_blocked:
+        burn_password_check(req.password)
+        await record(ip_key)
+        await record(mail_key)
         raise HTTPException(status_code=401, detail="E-mail ou senha incorretos")
+    if not verify_password(req.password, user["password_hash"]):
+        await record(ip_key)
+        await record(mail_key)
+        raise HTTPException(status_code=401, detail="E-mail ou senha incorretos")
+    if pwd_needs_update(user["password_hash"]):  # senha antiga com poucas voltas: refaz com a força atual
+        await db.users.update_one({"id": user["id"]}, {"$set": {"password_hash": hash_password(req.password)}})
     if user.get("deactivated"):  # entrar de novo reativa a conta desativada
         await db.users.update_one({"id": user["id"]}, {"$set": {"deactivated": False}})
         user["deactivated"] = False
@@ -127,7 +148,7 @@ async def change_password(req: PasswordChange, request: Request, user: dict = De
         {"$set": {"password_hash": hash_password(req.new_password), "password_changed": True}},
     )
     # encerra os outros aparelhos; esta sessão continua ativa
-    await db.sessions.delete_many({"user_id": user["id"], "token": {"$ne": token_from(request)}})
+    await db.sessions.delete_many({"user_id": user["id"], "token": {"$ne": session_key(token_from(request) or "")}})
     return {"ok": True}
 
 
@@ -207,8 +228,9 @@ async def set_onboarding(req: OnboardingUpdate, user: dict = Depends(get_current
 
 
 @router.post("/forgot")
-async def forgot_password(req: ForgotPassword):
+async def forgot_password(req: ForgotPassword, request: Request):
     """Manda um link de redefinição por e-mail. A resposta é sempre a mesma, exista a conta ou não (não revela quem é cadastrado)."""
+    await hit(f"forgot:{client_ip(request)}", 10, 3600)  # contra quem usa o botão para encher a caixa de e-mail dos outros
     result = {"ok": True, "email_enabled": mail_enabled()}
     user = await db.users.find_one({"email": req.email.lower()})
     if not user:
@@ -237,8 +259,9 @@ async def forgot_password(req: ForgotPassword):
 
 
 @router.post("/reset")
-async def reset_password(req: ResetPassword):
+async def reset_password(req: ResetPassword, request: Request):
     """Troca a senha com o link recebido por e-mail (uso único, 1 hora). Encerra todas as sessões abertas."""
+    await hit(f"reset:{client_ip(request)}", 20, 3600)
     now = datetime.now(timezone.utc)
     rec = await db.password_resets.find_one_and_update(
         {"token_hash": _hash_token(req.token), "used": False, "expires_at": {"$gt": now}},

@@ -7,10 +7,6 @@ from starlette.middleware.gzip import GZipMiddleware
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field
-from typing import List
-import uuid
-from datetime import datetime
 
 
 ROOT_DIR = Path(__file__).parent
@@ -52,66 +48,16 @@ app = FastAPI(lifespan=lifespan)
 api_router = APIRouter(prefix="/api")
 
 
-# Define Models
-class StatusCheck(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    client_name: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
-
-class StatusCheckCreate(BaseModel):
-    client_name: str
-
-# Add your routes to the router instead of directly to app
-@api_router.get("/")
-async def root():
-    return {"message": "Hello World"}
-
-def _mongo_url_info() -> dict:
-    """Resumo SEGURO da MONGO_URL (nunca a senha): ajuda a achar erro de digitação no deploy."""
-    from urllib.parse import unquote, urlsplit
-
-    raw = os.environ.get("MONGO_URL", "")
-    try:
-        parts = urlsplit(raw.strip())
-        password = unquote(parts.password or "")
-        return {
-            "scheme": parts.scheme,
-            "user": unquote(parts.username or ""),
-            "host": parts.hostname,
-            "password_length": len(password),
-            "password_has_brackets": "<" in password or ">" in password,
-            "url_has_outer_spaces": raw != raw.strip(),
-            "db_name": os.environ.get("DB_NAME", ""),
-        }
-    except Exception as exc:
-        return {"parse_error": type(exc).__name__}
-
-
 @api_router.get("/health")
 async def health():
-    """Diagnóstico do deploy: responde 200 sempre; `db` diz se o Mongo está acessível (sem expor segredos)."""
+    """Diagnóstico do deploy: `db` diz se o Mongo está acessível. Não revela nada sobre a configuração."""
     try:
         await asyncio.wait_for(client.admin.command("ping"), timeout=6)
         return {"ok": True, "db": "up"}
-    except Exception as exc:  # o nome do erro basta para saber se é IP bloqueado, senha ou timeout
+    except Exception as exc:  # o detalhe vai só para o log do servidor
         logging.getLogger(__name__).error("health: mongo ping falhou: %s", exc)
-        out = {"ok": False, "db": "down", "error": type(exc).__name__}
-        if os.environ.get("HEALTH_DEBUG") == "1":  # só quando você liga na Vercel; desligue depois
-            out["mongo_url"] = _mongo_url_info()
-        return out
+        return {"ok": False, "db": "down"}
 
-
-@api_router.post("/status", response_model=StatusCheck)
-async def create_status_check(input: StatusCheckCreate):
-    status_dict = input.model_dump()
-    status_obj = StatusCheck(**status_dict)
-    _ = await db.status_checks.insert_one(status_obj.model_dump())
-    return status_obj
-
-@api_router.get("/status", response_model=List[StatusCheck])
-async def get_status_checks():
-    status_checks = await db.status_checks.find().to_list(1000)
-    return [StatusCheck(**status_check) for status_check in status_checks]
 
 # App routers — VaiDeBike Fortaleza
 api_router.include_router(auth_router)
@@ -132,14 +78,30 @@ api_router.include_router(bugs_router)
 app.include_router(api_router)
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)  # a lista de ciclovias importadas é grande: comprime
+# Sem CORS_ORIGINS só o desenvolvimento local fala com a API de outra origem. Nunca "*" com cookies: qualquer site poderia agir como o usuário.
+_DEV_ORIGINS = "http://localhost:5173,http://localhost:3000"
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=[o.strip() for o in os.environ.get("CORS_ORIGINS", _DEV_ORIGINS).split(",") if o.strip() and o.strip() != "*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allow_headers=["Content-Type", "Authorization"],
     expose_headers=["X-Session-Token"],
 )
+
+
+@app.middleware("http")
+async def security_headers(request, call_next):
+    """Cabeçalhos de segurança em toda resposta da API (a respostas de erro também)."""
+    response = await call_next(request)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "no-referrer")
+    response.headers.setdefault("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
+    private = ("/api/auth", "/api/social", "/api/notifications", "/api/rides", "/api/chat", "/api/bugs", "/api/moderation")
+    if request.url.path.startswith(private) and "cache-control" not in response.headers:
+        response.headers["Cache-Control"] = "no-store"  # dados pessoais nunca ficam em cache
+    return response
 
 # Configure logging
 logging.basicConfig(

@@ -132,13 +132,13 @@ export function PasswordSection() {
         data-testid="profile-security"
         onSubmit={(e: FormEvent) => {
           e.preventDefault();
-          if (next.length < 6) return toast.error("A nova senha precisa ter pelo menos 6 caracteres");
+          if (next.length < 8) return toast.error("A nova senha precisa ter pelo menos 8 caracteres");
           if (mismatch) return;
           mutation.mutate();
         }}
       >
         <Field id="pw-current" label="Senha atual" type="password" autoComplete="current-password" value={current} onChange={(e) => setCurrent(e.target.value)} data-testid="pw-current" />
-        <Field id="pw-new" label="Nova senha" type="password" autoComplete="new-password" value={next} onChange={(e) => setNext(e.target.value)} minLength={6} maxLength={100} data-testid="pw-new" />
+        <Field id="pw-new" label="Nova senha" type="password" autoComplete="new-password" value={next} onChange={(e) => setNext(e.target.value)} minLength={8} maxLength={100} data-testid="pw-new" />
         <Field id="pw-confirm" label="Repita a nova senha" type="password" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
         {mismatch && <p className="text-xs text-red-400">As senhas não são iguais.</p>}
         <Button type="submit" disabled={mutation.isPending || !current || !next || mismatch} data-testid="pw-submit">
