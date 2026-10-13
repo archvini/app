@@ -140,8 +140,8 @@ tempo real com alerta de proximidade, cadastro/login e gamificação (XP, nívei
 - `playArrivalSound()` em `hooks/useRide.ts` (osciladores triangle, dó-mi-sol-dó). `MapPage` dispara quando `phase` vira `arrived`: vibração + (se `soundOn`) jingle e voz pt-BR. Deps só `[phase]` para não repetir ao mexer no botão de som.
 - Sons extras (`hooks/useRide.ts`): objeto `sound` ({on, arrivedAt}) espelha o botão de som; `playFinishSound` (após registrar pedal, exceto ≤8 s depois da chegada), `playRewardSound` (nível/selo). `MapPage`: voz "Em N metros, <manobra>" uma vez por passo a ≤100 m.
 
-## Busca no topo do mapa
-- `components/map/MapSearchBar.tsx`: filtro local (shops, lanes, obstacles filtrados; sem acento/caixa) + `/geocode` com debounce 500 ms (≥3 letras, guarda de resposta atrasada por `seq`). `MapPage`: `onSearchPlace` define `tapPoint` + `tapName` (título do cartão e nome do destino) e foca zoom 17; `onSearchLane` foca o ponto médio. Reusa `onSelectShop`/`onSelectObstacle`.
+## Busca
+- Só o painel inferior (`NavigationPanel`/`useNavigation.search` → `/geocode`) busca destino. `MapSearchBar` (topo) foi removida a pedido; o toque no mapa continua abrindo o cartão "Ponto no mapa".
 
 ## Relatos de problemas do app
 - Backend `routers/bugs.py`: `POST /bugs` (login opcional; limite 5/h por `who` = user id ou `ip:`), `GET /bugs` e `GET /bugs/open-count` e `PATCH /bugs/{id}` (moderador). Coleção `bug_reports` {id, category, message, status novo|analisando|resolvido, who, user_id, user_name, page, user_agent, viewport, app_version, created_at}. Resolver notifica o autor (`bug_fixed`).

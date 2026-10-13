@@ -12,7 +12,6 @@ import BottomSheet from "@/components/map/BottomSheet";
 import FortalezaMap from "@/components/map/FortalezaMap";
 import type { FocusRequest } from "@/components/map/FortalezaMap";
 import HazardAlertCard from "@/components/map/HazardAlertCard";
-import MapSearchBar from "@/components/map/MapSearchBar";
 import HazardIcon from "@/components/map/HazardIcon";
 import MapHud from "@/components/map/MapHud";
 import LaneEditor from "@/components/map/LaneEditor";
@@ -36,7 +35,7 @@ import type { NavPhase } from "@/hooks/useNavigation";
 import { playArrivalSound, playRewardSound, sound, useRide } from "@/hooks/useRide";
 import { apiDelete, apiDetail, apiGet, apiPost } from "@/lib/api";
 import { OBSTACLE_TYPES, SEVERITY_LABELS } from "@/lib/types";
-import type { BikeLane, Obstacle, ObstacleType, Place, ReportResult, Shop } from "@/lib/types";
+import type { BikeLane, Obstacle, ObstacleType, ReportResult, Shop } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const ALL_TYPES = Object.keys(OBSTACLE_TYPES) as ObstacleType[];
@@ -92,7 +91,6 @@ export default function MapPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selected, setSelected] = useState<Obstacle | null>(null);
   const [tapPoint, setTapPoint] = useState<{ lat: number; lng: number } | null>(null);
-  const [tapName, setTapName] = useState<string | null>(null); // nome do lugar vindo da busca (null = toque no mapa)
   const [focus, setFocus] = useState<FocusRequest | null>(null);
   const [follow, setFollow] = useState(false);
   const [soundOn, setSoundOn] = useState(true);
@@ -256,33 +254,14 @@ export default function MapPage() {
       setSelected(null);
       setSelectedShop(null);
       setFollow(false);
-      setTapName(null);
       setTapPoint({ lat, lng });
     },
     [phase, editorMode],
   );
 
-  // resultado da busca: marca o ponto e abre o cartão (ir até lá / reportar / adicionar local)
-  const onSearchPlace = useCallback((p: Place) => {
-    setSelected(null);
-    setSelectedShop(null);
-    setFollow(false);
-    setTapName(p.name);
-    setTapPoint({ lat: p.lat, lng: p.lng });
-    setFocus({ lat: p.lat, lng: p.lng, zoom: 17 });
-  }, []);
-
-  const onSearchLane = useCallback((l: BikeLane) => {
-    const mid = l.coordinates[Math.floor(l.coordinates.length / 2)];
-    if (!mid) return;
-    setTapPoint(null);
-    setFollow(false);
-    setFocus({ lat: mid[0], lng: mid[1], zoom: 15 });
-  }, []);
-
   const goToTapPoint = () => {
     if (!tapPoint) return;
-    chooseDestination({ ...tapPoint, name: tapName ?? "Ponto escolhido no mapa" });
+    chooseDestination({ ...tapPoint, name: "Ponto escolhido no mapa" });
     setTapPoint(null);
   };
 
@@ -412,17 +391,6 @@ export default function MapPage() {
 
       {/* Topo: próxima manobra (navegando) ou radar de perigos, e logo abaixo o cartão de alerta */}
       <div className="pointer-events-none absolute left-3 right-3 top-3 z-[1180] flex flex-col gap-2 md:left-[404px] md:right-3 md:max-w-[460px] [&>*]:pointer-events-auto">
-        {phase !== "navigating" && !pickMode && editorMode === "off" && (
-          <MapSearchBar
-            obstacles={filtered}
-            shops={shops}
-            lanes={lanes}
-            onPlace={onSearchPlace}
-            onShop={onSelectShop}
-            onLane={onSearchLane}
-            onObstacle={onSelectObstacle}
-          />
-        )}
         {phase === "navigating" ? (
           <ManeuverBanner nav={nav} ride={ride} />
         ) : (
@@ -635,7 +603,7 @@ export default function MapPage() {
           data-testid="map-tap-card"
         >
           <CardHeader className="pb-2">
-            <CardTitle className="font-heading text-sm">{tapName ?? "Ponto no mapa"}</CardTitle>
+            <CardTitle className="font-heading text-sm">Ponto no mapa</CardTitle>
             <CardDescription className="text-xs">O que você quer fazer aqui?</CardDescription>
             <CardAction>
               <Button variant="ghost" size="icon-xs" onClick={() => setTapPoint(null)} aria-label="Fechar" data-testid="map-tap-close">
