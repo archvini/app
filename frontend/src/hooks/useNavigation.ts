@@ -179,21 +179,25 @@ export function useNavigation(ride: RideState, obstacles: Obstacle[]) {
     [getOrigin],
   );
 
-  const search = useCallback(async (q: string) => {
+  const searchSeq = useRef(0); // ignora respostas atrasadas quando o usuário já digitou outra coisa
+  /** `silent` = busca automática enquanto digita: sem avisos de "digite mais letras" ou "nada encontrado". */
+  const search = useCallback(async (q: string, silent = false) => {
     const query = q.trim();
     if (query.length < 3) {
-      toast.info("Digite pelo menos 3 letras para buscar");
+      if (!silent) toast.info("Digite pelo menos 3 letras para buscar");
       return;
     }
+    const my = ++searchSeq.current;
     setSearching(true);
     try {
       const res = await apiGet<Place[]>(`/geocode?q=${encodeURIComponent(query)}`);
+      if (my !== searchSeq.current) return;
       setPlaces(res);
-      if (res.length === 0) toast.info("Nenhum lugar encontrado em Fortaleza para essa busca");
+      if (res.length === 0 && !silent) toast.info("Nenhum lugar encontrado em Fortaleza para essa busca");
     } catch (err) {
-      toast.error(apiDetail(err, "Busca indisponível agora"));
+      if (!silent && my === searchSeq.current) toast.error(apiDetail(err, "Busca indisponível agora"));
     } finally {
-      setSearching(false);
+      if (my === searchSeq.current) setSearching(false);
     }
   }, []);
 
