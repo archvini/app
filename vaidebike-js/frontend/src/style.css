@@ -1,0 +1,15 @@
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, sans-serif; }
+header { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; background: #16a34a; color: #fff; }
+button { cursor: pointer; padding: 8px 12px; border: 0; border-radius: 6px; background: #16a34a; color: #fff; }
+input, select { padding: 8px; border: 1px solid #ccc; border-radius: 6px; width: 100%; }
+.center { text-align: center; margin-top: 40vh; }
+.card { max-width: 340px; margin: 12vh auto; padding: 24px; display: flex; flex-direction: column; gap: 12px; border: 1px solid #ddd; border-radius: 12px; }
+.erro { color: #dc2626; margin: 0; }
+.mapa { position: relative; height: calc(100vh - 48px); }
+.map { position: absolute; inset: 0; }
+.painel { position: absolute; top: 10px; left: 10px; width: min(340px, calc(100% - 20px)); display: flex; flex-direction: column; gap: 8px; background: #fffe; padding: 10px; border-radius: 10px; max-height: 80%; overflow: auto; }
+.painel form { display: flex; flex-direction: column; gap: 8px; }
+.painel form:first-child { flex-direction: row; }
+.item { background: #fff; color: #111; text-align: left; border: 1px solid #ddd; }
+.item small { display: block; color: #666; }
