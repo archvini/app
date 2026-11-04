@@ -5,14 +5,13 @@ e o mar (os "traços longos" no mapa). Aqui pedimos ao roteador de bike a geomet
 esses pontos e guardamos a polilinha densa em `coordinates`. Os pontos originais ficam em `waypoints`.
 """
 
+import asyncio
 import logging
 
 from lib.db import db
 from lib.routing import bike_route, haversine_m, polyline_length_m
 
 logger = logging.getLogger(__name__)
-
-MAX_WAYPOINTS_PER_REQUEST = 25
 
 
 def nearest_point_on_polyline(point: tuple[float, float], line: list[list[float]]) -> tuple[float, float]:
@@ -38,21 +37,39 @@ def nearest_point_on_polyline(point: tuple[float, float], line: list[list[float]
     return best
 
 
+DETOUR_RATIO = 1.25  # trecho passa disso (+ folga) = o roteador deu a volta no quarteirão
+DETOUR_SLACK_M = 40
+CONCURRENCY = 6
+
+
+def _segment_or_straight(a: list[float], b: list[float], route: dict | None) -> list[list[float]]:
+    """Geometria de UM trecho entre dois toques. Se o roteador deu a volta (mão única, canteiro central),
+    usamos a linha reta entre os toques: quem desenhou já tocou a cada curva, então ela segue a avenida."""
+    straight = [[a[0], a[1]], [b[0], b[1]]]
+    if not route or len(route["coordinates"]) < 2:
+        return straight
+    limit = haversine_m((a[0], a[1]), (b[0], b[1])) * DETOUR_RATIO + DETOUR_SLACK_M
+    return route["coordinates"] if polyline_length_m(route["coordinates"]) <= limit else straight
+
+
 async def snap_waypoints(waypoints: list[list[float]]) -> list[list[float]] | None:
-    """Rota de bike por todos os waypoints (em blocos, com 1 ponto de sobreposição). None se o roteador falhar."""
+    """Cola o traçado nas ruas, trecho a trecho (toque a toque). None se o roteador falhar em tudo."""
     pts = [(p[0], p[1]) for p in waypoints]
     if len(pts) < 2:
         return None
+    sem = asyncio.Semaphore(CONCURRENCY)
+
+    async def one(a, b):
+        async with sem:
+            return await bike_route([a, b])
+
+    routes = await asyncio.gather(*(one(a, b) for a, b in zip(pts, pts[1:])))
+    if not any(routes):
+        return None  # roteador fora do ar: quem chamou decide (erro 503 ou fallback)
     merged: list[list[float]] = []
-    i = 0
-    while i < len(pts) - 1:
-        chunk = pts[i : i + MAX_WAYPOINTS_PER_REQUEST]
-        route = await bike_route(chunk)
-        if not route or len(route["coordinates"]) < 2:
-            return None
-        coords = route["coordinates"]
-        merged.extend(coords if not merged else coords[1:])
-        i += len(chunk) - 1
+    for a, b, route in zip(pts, pts[1:], routes):
+        seg = _segment_or_straight(list(a), list(b), route)
+        merged.extend(seg if not merged else seg[1:])
     return merged
 
 
