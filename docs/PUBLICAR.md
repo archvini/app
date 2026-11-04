@@ -93,7 +93,7 @@ Depois faça o Redeploy. Sem essas variáveis o pedido "funciona" na tela, mas n
 ## 12. Ciclovias e ciclofaixas no mapa (traçado)
 **Importar as reais do OpenStreetMap (uma vez):** com `SEED_TOKEN` criado na API (seção 5), abra `https://SEU-API/api/admin/import-lanes?token=SEU_TOKEN`. Ele traz as ciclovias e ciclofaixas já mapeadas em Fortaleza (as que ficam sobre as avenidas, seguindo as ruas) e responde, por exemplo, `{"ok":true,"encontrados":…,"usados":…,"novos":…}`. Pode demorar até ~1 minuto. Repetir só atualiza. Depois apague o `SEED_TOKEN`. Se vier `overpass_indisponivel`, tente de novo mais tarde. Obs.: o que o OpenStreetMap ainda não tem não aparece; use o desenho abaixo.
 
-**Desenhar um trecho que falta (conta dev):** no mapa, botão de camadas → "Desenhar / apagar ciclovias". Toque na rua de ponta a ponta (a cada curva ou esquina), "Concluir", dê o nome e escolha ciclovia (separada da pista) ou ciclofaixa (pintada). O servidor cola o traço nas ruas. Na aba "Apagar", toque num traçado para removê-lo.
+**Desenhar um trecho que falta (conta dev):** no mapa, botão de camadas → "Desenhar / apagar ciclovias". Toque na rua de ponta a ponta (a cada curva ou esquina), "Concluir", dê o nome e escolha ciclovia (separada da pista) ou ciclofaixa (pintada). O servidor cola o traço nas ruas. Na aba "Apagar", toque num traçado para removê-lo. O traçado é colado nas ruas trecho a trecho; se o roteador der a volta num quarteirão (mão única, canteiro central), esse trecho fica em linha reta entre os seus toques — por isso toque a cada curva/esquina. Traçados antigos com desvio: apague e desenhe de novo.
 
 As ciclovias de exemplo do seed podem ficar duplicadas sobre as importadas; se quiser, apague as de exemplo no modo "Apagar".
 
