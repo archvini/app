@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { SUPPORT_EMAIL, SUPPORT_MAILTO } from "@/lib/contact";
 import { toast } from "sonner";
 import { CircleHelp, KeyRound, Mail, PauseCircle, Save, Trash2 } from "lucide-react";
 
@@ -164,6 +165,14 @@ export function HelpSection() {
       <Button variant="outline" onClick={() => tutorial.mutate()} disabled={tutorial.isPending} data-testid="profile-tutorial">
         <CircleHelp className="h-4 w-4" /> Ver tutorial
       </Button>
+      <p className="mt-4 text-sm text-slate-400">
+        Dúvidas, problemas ou contato: <a href={SUPPORT_MAILTO} className="font-semibold text-emerald-400 hover:underline">{SUPPORT_EMAIL}</a>
+      </p>
+      <p className="mt-2 text-xs text-slate-500">
+        <Link to="/termos" className="underline hover:text-slate-300">Termos de Uso</Link>
+        {" · "}
+        <Link to="/privacidade" className="underline hover:text-slate-300">Política de Privacidade</Link>
+      </p>
     </Card>
   );
 }

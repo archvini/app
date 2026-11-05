@@ -156,3 +156,8 @@ As ciclovias de exemplo do seed podem ficar duplicadas sobre as importadas; se q
 - A equipe lê em **Caixa de alertas → aba Bugs**, com o contador de abertos, e marca **Analisando** ou **Resolvido**. Ao marcar Resolvido, quem estava logado recebe uma notificação de agradecimento no sino.
 - Limite de 5 relatos por hora por pessoa (ou por IP, se não logada), contra spam. Nova coleção `bug_reports` (criada sozinha). Backend mudou: **Redeploy da API** e do site.
 - Não tem anexo de print ainda; o testador pode mandar o print pelo grupo do beta.
+
+## 23. Suporte, privacidade e termos
+- E-mail de suporte: `suportevaidebike@gmail.com` (constante em `frontend/src/lib/contact.ts`; aparece na tela de login e em Configurações → Ajuda).
+- Páginas públicas `/privacidade` (LGPD: dados coletados, terceiros, prazos, direitos) e `/termos` (uso, segurança no trânsito, comunidade), ligadas no cadastro, no login e em Ajuda. O texto fica em `frontend/src/pages/LegalPage.tsx`; mude a data "Última atualização" quando editar.
+- Para o e-mail enviar mensagens do app, configure `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=465`, `SMTP_USER`, `SMTP_PASSWORD` (senha de app do Gmail) e `MAIL_FROM` na Vercel.

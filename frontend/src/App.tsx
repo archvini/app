@@ -16,6 +16,7 @@ import PersonPage from "@/pages/PersonPage";
 import SettingsPage from "@/pages/SettingsPage";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
+import LegalPage from "@/pages/LegalPage";
 
 // One <Route> per page in src/pages; BrowserRouter already wraps this in main.tsx.
 export default function App() {
@@ -38,6 +39,8 @@ export default function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/esqueci-senha" element={<ForgotPassword />} />
           <Route path="/redefinir-senha" element={<ResetPassword />} />
+          <Route path="/privacidade" element={<LegalPage kind="privacidade" />} />
+          <Route path="/termos" element={<LegalPage kind="termos" />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

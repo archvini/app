@@ -42,5 +42,5 @@ Já estava correto e foi mantido: e-mail nunca aparece para outros usuários, co
 - Não testei nada rodando aqui (sem como subir o servidor). Rode os testes do `backend/tests` e experimente login, cadastro e mapa na prévia da Vercel antes de mesclar.
 - Limite de tentativas depende do IP informado pela Vercel; atrás de redes compartilhadas (escola, Wi-Fi público) várias pessoas dividem o mesmo limite.
 - Fotos de alertas são públicas para quem tem o link (código aleatório). Não fotografe rostos nem placas.
-- Falta ainda: política de privacidade publicada, política de segurança de conteúdo (CSP) no site e uma auditoria externa. Recomendado antes do lançamento público.
+- Falta ainda: (a política de privacidade e os termos já existem em `/privacidade` e `/termos`; peça a um advogado para revisar antes do lançamento público) política de segurança de conteúdo (CSP) no site e uma auditoria externa. Recomendado antes do lançamento público.
 - O chat é público entre usuários logados, por desenho: avise para não compartilharem dados pessoais nele.

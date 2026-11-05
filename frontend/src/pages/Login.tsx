@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
+import { SUPPORT_EMAIL, SUPPORT_MAILTO } from "@/lib/contact";
 import { apiDetail, apiPost } from "@/lib/api";
 import { beginSession } from "@/lib/session";
 import type { User } from "@/lib/types";
@@ -117,6 +118,13 @@ export default function Login() {
             </Link>
           </p>
         </div>
+        <p className="mt-6 text-center text-xs text-slate-500">
+          Precisa de ajuda? <a href={SUPPORT_MAILTO} className="underline hover:text-slate-300">{SUPPORT_EMAIL}</a>
+          {" · "}
+          <Link to="/termos" className="underline hover:text-slate-300">Termos</Link>
+          {" · "}
+          <Link to="/privacidade" className="underline hover:text-slate-300">Privacidade</Link>
+        </p>
       </div>
     </div>
   );
