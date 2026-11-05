@@ -137,6 +137,11 @@ export default function Register() {
             <Button type="submit" className="w-full" size="lg" disabled={mutation.isPending} data-testid="register-submit">
               {mutation.isPending ? "Criando conta…" : "Criar conta e pedalar"}
             </Button>
+            <p className="text-center text-xs text-slate-500">
+              Ao criar a conta você concorda com os{" "}
+              <Link to="/termos" className="underline hover:text-slate-300">Termos de Uso</Link> e a{" "}
+              <Link to="/privacidade" className="underline hover:text-slate-300">Política de Privacidade</Link>.
+            </p>
           </form>
 
           <p className="mt-6 text-center text-sm text-slate-400">
