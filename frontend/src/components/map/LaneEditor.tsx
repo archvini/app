@@ -23,7 +23,7 @@ interface Props {
   onEraseTargetChange: (l: BikeLane | null) => void;
 }
 
-/** Barra da conta dev: desenhar ciclovia/ciclofaixa tocando no mapa (cola nas ruas) ou apagar um traçado. */
+/** Barra da conta dev: desenhar ciclovia/ciclofaixa tocando no mapa ou apagar um traçado. */
 export default function LaneEditor({ mode, points, onModeChange, onPointsChange, eraseTarget, onEraseTargetChange }: Props) {
   const queryClient = useQueryClient();
   const [saveOpen, setSaveOpen] = useState(false);
@@ -40,7 +40,7 @@ export default function LaneEditor({ mode, points, onModeChange, onPointsChange,
     mutationFn: () => apiPost<BikeLane>("/bikelanes", { name, kind, waypoints: points }),
     onSuccess: (lane) => {
       void queryClient.invalidateQueries({ queryKey: ["bikelanes"] });
-      toast.success(lane.snapped ? "Traçado salvo e ajustado às ruas" : "Traçado salvo (linha aproximada)", {
+      toast.success("Traçado salvo", {
         description: `${lane.name} · ${lane.length_km} km`,
       });
       setSaveOpen(false);
@@ -98,7 +98,7 @@ export default function LaneEditor({ mode, points, onModeChange, onPointsChange,
         {mode === "draw" ? (
           <>
             <p className="text-xs leading-relaxed text-slate-400">
-              Toque no mapa seguindo a rua, de ponta a ponta (a cada curva ou esquina ajuda). Ao concluir, o traço é colado nas ruas.
+              Toque no mapa seguindo a rua, de ponta a ponta (a cada curva ou esquina ajuda). O traço fica exatamente onde você tocar: dê zoom e toque sobre a via, a cada curva ou esquina.
               {points.length > 0 && <b className="ml-1 text-yellow-300">{points.length} ponto{points.length > 1 ? "s" : ""}</b>}
             </p>
             <div className="flex gap-2">
@@ -134,7 +134,7 @@ export default function LaneEditor({ mode, points, onModeChange, onPointsChange,
         <DialogContent className="border-slate-700 bg-slate-900 sm:max-w-sm" data-testid="lane-save-modal">
           <DialogHeader>
             <DialogTitle className="font-heading">Salvar traçado</DialogTitle>
-            <DialogDescription>O traço será ajustado às ruas e aparecerá para todos os ciclistas.</DialogDescription>
+            <DialogDescription>O traço fica como você desenhou e aparecerá para todos os ciclistas.</DialogDescription>
           </DialogHeader>
           <form
             className="space-y-3"
