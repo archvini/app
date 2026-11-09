@@ -55,6 +55,21 @@ async def remove_demo_accounts(request: Request, token: str):
     return {"ok": True, "contas_removidas": res.deleted_count}
 
 
+@router.get("/lanes-to-taps")
+async def lanes_to_taps(request: Request, token: str):
+    """Conserta traçados desenhados à mão que ficaram com desvio: volta a geometria para os toques originais."""
+    await _check(token, request)
+    fixed = 0
+    async for lane in db.bikelanes.find({"source": "comunidade", "waypoints.1": {"$exists": True}}):
+        if lane["coordinates"] != lane["waypoints"]:
+            km = round(polyline_length_m(lane["waypoints"]) / 1000, 2)
+            await db.bikelanes.update_one(
+                {"id": lane["id"]}, {"$set": {"coordinates": lane["waypoints"], "snapped": True, "length_km": km}}
+            )
+            fixed += 1
+    return {"ok": True, "tracados_corrigidos": fixed}
+
+
 @router.get("/snap")
 async def run_snap(request: Request, token: str, force: int = 0):
     """Cola as ciclovias nas ruas reais (roteador de bike). Idempotente; repita até `pendentes` chegar a 0.

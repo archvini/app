@@ -5,7 +5,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from lib.auth import require_moderator
 from lib.db import db
 from lib.routing import polyline_length_m
-from lib.snap import looks_sane, snap_waypoints
 from models.bikelane import BikeLane, BikeLaneCreate
 
 router = APIRouter(prefix="/bikelanes", tags=["bikelanes"])
@@ -24,27 +23,23 @@ async def list_bikelanes():
 
 @router.post("", response_model=BikeLane)
 async def create_bikelane(req: BikeLaneCreate, _: dict = Depends(require_moderator)):
-    """Cria uma ciclovia/ciclofaixa a partir dos pontos tocados no mapa, colada nas ruas (roteador de bike)."""
+    """Cria uma ciclovia/ciclofaixa exatamente pelos pontos tocados no mapa.
+
+    Não passa pelo roteador: ele dá a volta em avenidas de mão única/canteiro central e espalha o traço pelas ruas laterais.
+    """
     for p in req.waypoints:
         if len(p) != 2 or not (LAT_RANGE[0] <= p[0] <= LAT_RANGE[1] and LNG_RANGE[0] <= p[1] <= LNG_RANGE[1]):
             raise HTTPException(status_code=422, detail="Há um ponto fora de Fortaleza")
-    snapped = await snap_waypoints(req.waypoints)
-    if snapped and looks_sane(req.waypoints, snapped):
-        coords, ok = snapped, True
-    elif snapped is None:
-        raise HTTPException(status_code=503, detail="O roteador de bike não respondeu agora. Tente de novo em instantes.")
-    else:
-        coords, ok = req.waypoints, False  # resultado estranho: guarda a linha reta, marcada como aproximada
     doc = {
         "id": f"lane-{uuid.uuid4().hex[:10]}",
         "name": req.name.strip(),
         "kind": req.kind,
         "notes": req.notes.strip(),
-        "length_km": round(polyline_length_m(coords) / 1000, 2),
-        "coordinates": coords,
+        "length_km": round(polyline_length_m(req.waypoints) / 1000, 2),
+        "coordinates": req.waypoints,
         "waypoints": req.waypoints,
         "source": "comunidade",
-        "snapped": ok,
+        "snapped": True,  # já está onde o dev tocou; True evita o ajuste automático (snap_pending_lanes) refazer o desvio
     }
     await db.bikelanes.insert_one(doc)
     return BikeLane(**doc)
